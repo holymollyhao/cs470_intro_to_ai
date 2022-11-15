@@ -77,7 +77,7 @@ def load_backbone(name, output_attentions=False):
 
 class BaseNet(nn.Module):
 
-    def __init__(self, model_name, mode='base'):
+    def __init__(self, model_name='', mode='base'):
         super(BaseNet, self).__init__()
         self.model_name = model_name
 
@@ -149,3 +149,11 @@ class BaseNet(nn.Module):
 
     def set_input_embeddings(self, embeddings):
         return self.backbone.set_input_embeddings(embeddings)
+
+
+    def get_config(self):
+        return self.backbone.config
+
+    def set_backbone_gradients_false(self):
+        for params in self.backbone.parameters():
+            params.requires_grad = False

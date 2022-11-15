@@ -79,3 +79,36 @@ def print_summary(model):
     if cnt == 0:
         print(f'No trainable parameters')
     print("##############################")
+
+def get_path():
+    path = 'log/'
+
+    # information about used data type
+    path += conf.args.dataset + '/'
+
+    # information about used model type
+    path += conf.args.method + '/'
+
+    # information about domain(condition) of training data
+    if conf.args.src == ['rest']:
+        path += 'src_rest' + '/'
+    elif conf.args.src == ['all']:
+        path += 'src_all' + '/'
+    elif conf.args.src is not None and len(conf.args.src) >= 1:
+        path += 'src_' + '_'.join(conf.args.src) + '/'
+
+    if conf.args.tgt:
+        path += 'tgt_' + conf.args.tgt + '/'
+
+    # get_default_log_prefix(path)
+    path += conf.args.log_prefix + '/'
+
+    checkpoint_path = path + 'cp/'
+    log_path = path
+    result_path = path + '/'
+
+    print('Path:{}'.format(path))
+    return result_path, checkpoint_path, log_path
+
+# def get_default_log_prefix():
+#     print(path)

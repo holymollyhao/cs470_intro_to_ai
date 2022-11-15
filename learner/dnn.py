@@ -72,14 +72,14 @@ class DNN():
         #     iabn.convert_iabn(self.net)
 
 
-        if conf.args.load_checkpoint_path and conf.args.model not in ['wideresnet28-10',
-                                                                      'resnext29']:  # false if conf.args.load_checkpoint_path==''
-            if conf.args.dataset in ['imagenet'] and conf.args.method != 'Ours': # Baselines other than NOTE should use a pre-trained model.
-                pass
-            elif conf.args.dataset in ['imagenet'] and conf.args.method == 'Ours' and not conf.args.iabn: #if ablation on without iabn, load pretrained imagenet.
-                pass
-            else:
-                self.load_checkpoint(conf.args.load_checkpoint_path)
+        # if conf.args.load_checkpoint_path and conf.args.model not in ['wideresnet28-10',
+        #                                                               'resnext29']:  # false if conf.args.load_checkpoint_path==''
+        #     if conf.args.dataset in ['imagenet'] and conf.args.method != 'Ours': # Baselines other than NOTE should use a pre-trained model.
+        #         pass
+        #     elif conf.args.dataset in ['imagenet'] and conf.args.method == 'Ours' and not conf.args.iabn: #if ablation on without iabn, load pretrained imagenet.
+        #         pass
+        #     else:
+        #         self.load_checkpoint(conf.args.load_checkpoint_path)
 
 
         # if conf.args.iabn and conf.args.pretrain_wo_iabn:
@@ -132,6 +132,9 @@ class DNN():
             if conf.args.method == 'TENT' and conf.args.dataset == 'imagenet': # TENT use SGD for imagenet
                 self.optimizer = optim.SGD(self.net.parameters(), lr=conf.args.opt['learning_rate'],
                                             weight_decay=conf.args.opt['weight_decay'])
+            elif 'prompt' in conf.args.method and conf.args.online == False:
+                self.optimizer = optim.Adam(self.net.parameters(), lr=conf.args.opt['prompt_learning_rate'],
+                                    weight_decay=conf.args.opt['weight_decay'])
             else:
                 self.optimizer = optim.Adam(self.net.parameters(), lr=conf.args.opt['learning_rate'],
                                     weight_decay=conf.args.opt['weight_decay'])
@@ -312,6 +315,11 @@ class DNN():
         else:
             cp = net
 
+        torch.save({
+            'state_dict': cp.state_dict(),
+            'epoch': epoch,
+        }, checkpoint_path)
+
 
     def load_checkpoint(self, checkpoint_path):
         checkpoint_dict = torch.load(checkpoint_path, map_location=f'cuda:{conf.args.gpu_idx}')
@@ -386,6 +394,7 @@ class DNN():
         # setup models
 
         self.net.train()
+        self.net.set_backbone_gradients_false()
         class_loss_sum = 0.0
         total_iter = 0
 
@@ -719,3 +728,32 @@ class DNN():
         class_accuracy_of_test_data, loss, cm_class = self.evaluation(epoch, 'test')
 
         return class_accuracy_of_test_data, loss
+
+    def set_gradients(self):
+        assert conf.args.method in ['prompttune', 'ttaprompttune']
+        for params in self.net.parameters():
+            params.requires_grad = True
+        for params in self.net.backbone.parameters():
+            params.requires_grad = False
+        for params in self.net.backbone.get_input_embeddings().parameters():
+            params.requires_grad = True
+
+    def set_gradients_bn(self):
+        assert conf.args.method in ['prompttune', 'ttaprompttune']
+        for m in self.net.modules():
+            if not (isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm1d)):
+                for params in m.parameters():
+                    params.requires_grad= False
+            else:
+                for params in m.parameters():
+                    params.requires_grad = True
+
+    def set_gradients_bnln(self):
+        assert conf.args.method in ['prompttune', 'ttaprompttune']
+        for m in self.net.modules():
+            if not (isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm1d) or isinstance(m, nn.LayerNorm)):
+                for params in m.parameters():
+                    params.requires_grad= False
+            else:
+                for params in m.parameters():
+                    params.requires_grad = True

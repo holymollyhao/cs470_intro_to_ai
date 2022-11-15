@@ -3,17 +3,16 @@ from .dnn import DNN
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import models
-from models.emebdding_layer import SoftEmbedding
+from models.emebdding_layer import TTAEmbedding
 from utils.loss_functions import *
 from utils.util_functions import print_summary
-
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
 
 # def initialize_gradient(module, bool):
 
-class Prompt_tuning(DNN):
+class TTA_Prompt_tuning(DNN):
     def __init__(self, *args, **kwargs):
-        super(Prompt_tuning, self).__init__(*args, **kwargs)
+        super(TTA_Prompt_tuning, self).__init__(*args, **kwargs)
 
         n_tokens = 20
         initialize_from_vocab = True,
@@ -22,14 +21,16 @@ class Prompt_tuning(DNN):
         # print_summary(self.net) # for debugging purpose
 
         ## only can be used with huggingface transformer models
-        self.soft_embedding = SoftEmbedding.SoftEmbedding(
+        self.tta_embedding = TTAEmbedding.TTAEmbedding(
             self.net.get_input_embeddings(),
             n_tokens=self.n_tokens,
-            initialize_from_vocab = self.initialize_from_vocab
+            initialize_from_vocab = self.initialize_from_vocab,
+            model_config = self.net.get_config()
         )
 
         # setting the previous input_embeddings to current embedding
-        self.net.set_input_embeddings(self.soft_embedding)
+        self.net.set_input_embeddings(self.tta_embedding)
+
 
         # load checkpoint from specified path, if specified
         checkpoint_path = conf.args.load_checkpoint_path
@@ -41,8 +42,7 @@ class Prompt_tuning(DNN):
         # initialize requires_grad of model
         self.set_gradients()
 
-
-    # prefix tuning can only be done in an offline manner
+    # for training source model
     def train(self, current_num_sample):
         """
         Train the model
@@ -53,6 +53,7 @@ class Prompt_tuning(DNN):
         FINISHED = 2
 
         self.net.train()
+        self.net.to(device)
         class_loss_sum = 0.0
         total_iter = 0
 
@@ -86,16 +87,16 @@ class Prompt_tuning(DNN):
                 self.scheduler.step()
 
 
-
-    def train_online(self, current_num_sample):
+    def train_online(self, current_num_sample): # adpat to target without looking at source
 
         """
-                        Train the model
-                        """
+        Train the model
+        """
 
         TRAINED = 0
         SKIPPED = 1
         FINISHED = 2
+
 
         if not hasattr(self, 'previous_train_loss'):
             self.previous_train_loss = 0
@@ -108,10 +109,11 @@ class Prompt_tuning(DNN):
         current_sample = feats[current_num_sample - 1], cls[current_num_sample - 1], dls[current_num_sample - 1]
         self.mem.add_instance(current_sample)
 
-        if conf.args.use_learned_stats:  # batch-free inference
-            self.evaluation_online(current_num_sample, '',
-                                   [[current_sample[0]], [current_sample[1]], [current_sample[2]]])
+        if conf.args.use_learned_stats: #batch-free inference
+            self.evaluation_online(current_num_sample, '', [[current_sample[0]], [current_sample[1]], [current_sample[2]]])
 
+
+        # if not specified with update_every_x, skip
         if current_num_sample % conf.args.update_every_x != 0:  # train only when enough samples are collected
             if not (current_num_sample == len(self.target_train_set[
                                                   0]) and conf.args.update_every_x >= current_num_sample):  # update with entire data
@@ -119,12 +121,19 @@ class Prompt_tuning(DNN):
                 self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=self.previous_train_loss)
                 return SKIPPED
 
-        # Evaluate with a batch
-        if not conf.args.use_learned_stats:  # batch-based inference
+        if not conf.args.use_learned_stats: #batch-based inference
             self.evaluation_online(current_num_sample, '', self.mem.get_memory())
 
         # setup models
         self.net.train()
+
+        if conf.args.adapt_with_ln:
+            self.set_gradients_bnln()
+        else:
+            self.set_gradients_bn()
+
+        from utils.util_functions import print_summary
+        print_summary(self.net)
 
         if len(feats) == 1:  # avoid BN error
             self.net.eval()
@@ -144,15 +153,20 @@ class Prompt_tuning(DNN):
             for batch_idx, (feats,) in enumerate(data_loader):
                 feats = feats.to(device)
 
+                # prediction from network
                 preds_of_data = self.net(feats)
-
+                # entropy loss of the predictions
                 loss = entropy_loss(preds_of_data)
 
+                # backpropagate the loss
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
         self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=0)
+
+        return TRAINED
+
 
     # loading from source, which does not have any softempbedding layer
     def load_checkpoint_naive(self, checkpoint_path=''):
@@ -166,19 +180,19 @@ class Prompt_tuning(DNN):
         temp_net = BaseNet(self.net.model_name)
         temp_net.load_state_dict(checkpoint, strict=True)
 
-        from models.emebdding_layer.SoftEmbedding import SoftEmbedding
-        softembedding = SoftEmbedding(
+        from models.emebdding_layer.TTAEmbedding import TTAEmbedding
+        ttaembedding = TTAEmbedding(
             temp_net.get_input_embeddings(),
             n_tokens=self.n_tokens,
             initialize_from_vocab=self.initialize_from_vocab,
+            model_config=temp_net.get_config()
         )
-        temp_net.set_input_embeddings(softembedding)
+        temp_net.set_input_embeddings(ttaembedding)
         self.net = temp_net
         self.net.to(device)
+
         # set requires_grad of model
         self.set_gradients()
-
-
 
 
 

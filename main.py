@@ -19,35 +19,6 @@ from utils.util_functions import *
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-def get_path():
-    path = 'log/'
-
-    # information about used data type
-    path += conf.args.dataset + '/'
-
-    # information about used model type
-    path += conf.args.method + '/'
-
-    # information about domain(condition) of training data
-    if conf.args.src == ['rest']:
-        path += 'src_rest' + '/'
-    elif conf.args.src == ['all']:
-        path += 'src_all' + '/'
-    elif conf.args.src is not None and len(conf.args.src) >= 1:
-        path += 'src_' + '_'.join(conf.args.src) + '/'
-
-    if conf.args.tgt:
-        path += 'tgt_' + conf.args.tgt + '/'
-
-    path += conf.args.log_prefix + '/'
-
-    checkpoint_path = path + 'cp/'
-    log_path = path
-    result_path = path + '/'
-
-    print('Path:{}'.format(path))
-    return result_path, checkpoint_path, log_path
-
 def main():
     ######################################################################
     device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
@@ -125,12 +96,16 @@ def main():
         from learner.dnn import DNN
         learner_method = DNN
     elif conf.args.method == "finetune":
-        learner_method = None
+        from learner.finetune import Fine_tuning # finetuning
+        learner_method = Fine_tuning
     elif conf.args.method == "finetune-top":
         learner_method = None
     elif conf.args.method == "prompttune": # softembedding
         from learner.prompt_tuning import Prompt_tuning
         learner_method = Prompt_tuning
+    elif conf.args.method == "ttaprompttune": # softembedding
+        from learner.tta_prompt_tuning import TTA_Prompt_tuning
+        learner_method = TTA_Prompt_tuning
     elif conf.args.method == "prefixtune":
         learner_method = None
     elif conf.args.method == "adaptertune":
@@ -252,8 +227,8 @@ def main():
                                 checkpoint_path=checkpoint_path + 'cp_last.pth.tar')
         learner.dump_eval_online_result()
 
-        if conf.args.log_bn_stats:
-            learner.hook_logger.dump_logbnstats_result()
+        # if conf.args.log_bn_stats:
+        #     learner.hook_logger.dump_logbnstats_result()
 
         time_elapsed = time.time() - since
         print('Completion time: {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -300,6 +275,8 @@ def parse_arguments(argv):
                         )
     parser.add_argument('--load_checkpoint_path', type=str, default='',
                         help='Load checkpoint and train from checkpoint in path?')
+    parser.add_argument('--use_learned_stats', action='store_true', help='Use learned stats')
+
 
     ### Optional ###
     parser.add_argument('--src', nargs='*', default=None,
@@ -318,7 +295,7 @@ def parse_arguments(argv):
                         help="How many iteration steps you would like to take")
     parser.add_argument('--log_prefix', type=str, default='',
                         help='Suffix of log file path')
-    parser.add_argument('--cache_dir', type=str, default=None,
+    parser.add_argument('--cache_dir', type=str, default='/mnt/sting/twkim/tetra/cache/',
                         help='cache directory that stores the pretrained models')
     parser.add_argument('--src_sep', action='store_true', help='Separate domains for source')
     parser.add_argument('--src_sep_noshuffle', action='store_true', help='Separate domains for source')
@@ -328,15 +305,17 @@ def parse_arguments(argv):
     parser.add_argument('--nsample', type=int, default=99999,
                         help='How many samples do you want use for train')
     parser.add_argument('--log_percentile', action='store_true', help='percentile logging process')
+    parser.add_argument('--validation', action='store_true', help='Use validation data instead of test data for hyperparameter tuning')
+
 
 
     ### Used for Test-time Adaptation ###
-    parser.add_argument('--update_every_x', type=int, default=1, help='number of target samples used for every update')
+    parser.add_argument('--update_every_x', type=int, default=64, help='number of target samples used for every update')
     parser.add_argument('--online', action='store_true', help='training via online learning?')
-
+    parser.add_argument('--adapt_with_ln', action='store_true', help='adapt layer normalization layer as well')
 
     ### Memory Type ###
-    parser.add_argument('--memory_size', type=int, default=1,
+    parser.add_argument('--memory_size', type=int, default=64,
                         help='number of previously trained data to be used for training')
     parser.add_argument('--memory_type', type=str, default='FIFO',
                         help='FIFO'
