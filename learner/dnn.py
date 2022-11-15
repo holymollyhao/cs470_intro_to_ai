@@ -328,6 +328,16 @@ class DNN():
         except KeyError:
             checkpoint = checkpoint_dict
 
+        if conf.args.parallel:
+            from collections import OrderedDict
+            new_state_dict = OrderedDict()
+
+            for k, v in checkpoint.items():
+                if 'module' not in k:
+                    k = 'module.' + k
+                new_state_dict[k] = v
+            checkpoint = new_state_dict
+
 
         if isinstance(self.net, nn.Sequential):
             if isinstance(self.net[0], NormalizeLayer):
