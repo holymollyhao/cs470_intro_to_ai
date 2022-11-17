@@ -75,7 +75,7 @@ def print_summary(model):
     for params in model.parameters():
         if params.requires_grad:
             print(f'{cnt}th trainable parameter: {np.prod(params.size())}')
-            cnt += 1
+        cnt += 1
     if cnt == 0:
         print(f'No trainable parameters')
     print("##############################")
@@ -109,6 +109,12 @@ def get_path():
 
     print('Path:{}'.format(path))
     return result_path, checkpoint_path, log_path
+
+def is_instance_of_any(module, instance_list):
+    for instance in instance_list:
+        if isinstance(module, instance):
+            return True
+    return False
 
 # def get_default_log_prefix():
 #     print(path)
