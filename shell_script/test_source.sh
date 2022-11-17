@@ -1,6 +1,6 @@
 LOAD_PREFIX="221114_initial_gen"
 LOG_BASE_PATH="/home/twkim/git/tetra/log"
-METHODS="Src prompttune ttaprompttune"
+METHODS="prompttune ttaprompttune"
 
 
 #INITIAL parameters for running model
@@ -8,7 +8,7 @@ GPUS=(0 1 2 3 4 5 6 7)
 NUM_GPUS=${#GPUS[@]}
 SEED=0
 i=0
-DATASETS="tomatoes finefood" #this is fixed for source training
+DATASETS="finefood tomatoes" #this is fixed for source training
 
 
 sleep 1 # prevent mistake
@@ -18,7 +18,7 @@ wait_n() {
   #limit the max number of jobs as NUM_MAX_JOB and wait
   background=($(jobs -p))
   local default_num_jobs=1 #12
-  local num_max_jobs=7
+  local num_max_jobs=1
   echo $num_max_jobs
   if ((${#background[@]} >= num_max_jobs)); then
     wait -n
@@ -44,8 +44,6 @@ no_adapt_naive_src() {
         MODEL="bert"
         TGT="test"
       fi
-
-      # load path : /home/twkim/git/tetra/log/sst-2/prompttune/tgt_test/221114_initial_gen_0/cp
       python main.py --gpu_idx ${GPUS[i % ${NUM_GPUS}]} --dataset $DATASET \
                       --method ${METHOD} \
                       --tgt $TGT \
@@ -62,12 +60,37 @@ no_adapt_naive_src() {
 }
 
 #### Finetune + Naive prompt tuning with frozen src model
+
+finetune_with_src(){
+  LOG_PREFIX="221115_naive_src_adapt"
+  EPOCHS="0 1 3 5 10"
+  for DATASET in $DATASETS; do
+    for EPOCH in $EPOCHS; do
+      MODEL="bert"
+      TGT="test"
+      METHOD="finetune"
+      python main.py  --dataset $DATASET \
+                      --parallel \
+                      --method ${METHOD} \
+                      --tgt $TGT \
+                      --epoch $EPOCH \
+                      --model $MODEL \
+                      --seed $SEED \
+                      --load_checkpoint_path /${LOG_BASE_PATH}/sst-2/Src/tgt_test/${LOAD_PREFIX}_${SEED}/cp/cp_last.pth.tar \
+                      --log_prefix ${LOG_PREFIX}_fromSrc_${SEED}_epoch${EPOCH} \
+                    2>&1 | tee raw_logs/${DATASET}_${LOG_PREFIX}_${SEED}_job${i}.txt
+      wait
+      i=$((i + 1))
+    done
+  done
+}
+
 adapt_with_naive_src() {
   LOG_PREFIX="221115_naive_src_adapt"
-  EPOCHS="1 3 5"
+  EPOCHS="0 1 3 5 10"
   for DATASET in $DATASETS; do
     for METHOD in $METHODS; do
-      for EPOCHS in $EPOCH; do
+      for EPOCH in $EPOCHS; do
         if [ "${METHOD}" = "Src" ]; then
           continue
         elif [ "${METHOD}" = "finetune" ]; then
@@ -81,18 +104,34 @@ adapt_with_naive_src() {
           TGT="test"
         fi
 
-        # load path : /home/twkim/git/tetra/log/sst-2/prompttune/tgt_test/221114_initial_gen_0/cp
-        python main.py --gpu_idx ${GPUS[i % ${NUM_GPUS}]} --dataset $DATASET \
-                        --method ${METHOD} \
-                        --tgt $TGT \
-                        --epoch $EPOCH \
-                        --model $MODEL \
-                        --seed $SEED \
-                        --load_checkpoint_path /${LOG_BASE_PATH}/sst-2/Src/tgt_test/${LOAD_PREFIX}_${SEED}/cp/cp_last.pth.tar \
-                        --log_prefix ${LOG_PREFIX}_fromSrc_${SEED}_epoch${EPOCH} \
-                      2>&1 | tee raw_logs/${DATASET}_${LOG_PREFIX}_${SEED}_job${i}.txt &
-        i=$((i + 1))
-        wait_n
+        if [ "${DATASET}" = "tomatoes" ]; then
+          # load path : /home/twkim/git/tetra/log/sst-2/prompttune/tgt_test/221114_initial_gen_0/cp
+          python main.py  --dataset $DATASET \
+                          --parallel \
+                          --method ${METHOD} \
+                          --tgt $TGT \
+                          --epoch $EPOCH \
+                          --model $MODEL \
+                          --seed $SEED \
+                          --load_checkpoint_path /${LOG_BASE_PATH}/sst-2/Src/tgt_test/${LOAD_PREFIX}_${SEED}/cp/cp_last.pth.tar \
+                          --log_prefix ${LOG_PREFIX}_fromSrc_${SEED}_epoch${EPOCH} \
+                        2>&1 | tee raw_logs/${DATASET}_${LOG_PREFIX}_${SEED}_job${i}.txt
+          wait
+          i=$((i + 1))
+        else
+          # load path : /home/twkim/git/tetra/log/sst-2/prompttune/tgt_test/221114_initial_gen_0/cp
+          python main.py  --gpu_idx ${GPUS[i % ${NUM_GPUS}]} --dataset $DATASET \
+                          --method ${METHOD} \
+                          --tgt $TGT \
+                          --epoch $EPOCH \
+                          --model $MODEL \
+                          --seed $SEED \
+                          --load_checkpoint_path /${LOG_BASE_PATH}/sst-2/Src/tgt_test/${LOAD_PREFIX}_${SEED}/cp/cp_last.pth.tar \
+                          --log_prefix ${LOG_PREFIX}_fromSrc_${SEED}_epoch${EPOCH} \
+                        2>&1 | tee raw_logs/${DATASET}_${LOG_PREFIX}_${SEED}_job${i}.txt &
+          wait_n
+          i=$((i + 1))
+        fi
       done
     done
   done
@@ -117,7 +156,7 @@ adapt_with_pretrained_src() {
           TGT="test"
         fi
 
-        # load path : /home/twkim/git/tetra/log/sst-2/prompttune/tgt_test/221114_initial_gen_0/cp
+        # load path : /home/twkim/git/tetra/log/sst-2/prompttune/tgt_test/01221114_initial_gen_0/cp
         python main.py --gpu_idx ${GPUS[i % ${NUM_GPUS}]} --dataset $DATASET \
                         --method ${METHOD} \
                         --tgt $TGT \
@@ -135,5 +174,6 @@ adapt_with_pretrained_src() {
 }
 
 #no_adapt_naive_src
+finetune_with_src
 #adapt_with_naive_src
-adapt_with_pretrained_src
+#adapt_with_pretrained_src
