@@ -16,7 +16,7 @@ import conf
 from data_loader import data_loader
 from utils.util_functions import *
 # from utils.tensorboard_logger import Tensorboard
-
+torch.multiprocessing.set_sharing_strategy('file_system')
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 def main():
@@ -28,13 +28,11 @@ def main():
     ################### Hyperparameters #################
     # load according opt and hyperparms
     opt = load_opt(conf.args.dataset)
-    conf.args.opt = opt
-
     if conf.args.lr:
-        opt['lr'] = conf.args.lr
+        opt['learning_rate'] = conf.args.lr
     if conf.args.weight_decay:
         opt['weight_decay'] = conf.args.weight_decay
-
+    conf.args.opt = opt
     ################### Load pretrained model and tokenizer #################
 
     model = None
@@ -95,6 +93,9 @@ def main():
     if conf.args.method == 'Src':
         from learner.dnn import DNN
         learner_method = DNN
+    elif conf.args.method == 'ln_tent':
+        from learner.ln_tent import LN_TENT
+        learner_method = LN_TENT
     elif conf.args.method == "finetune":
         from learner.finetune import Fine_tuning # finetuning
         learner_method = Fine_tuning
@@ -106,6 +107,9 @@ def main():
     elif conf.args.method == "ttaprompttune": # softembedding
         from learner.tta_prompt_tuning import TTA_Prompt_tuning
         learner_method = TTA_Prompt_tuning
+    elif conf.args.method == "dattaprompttune": # softembedding
+        from learner.tta_domainaware_prompt_tuning import TTA_DomainAware_Prompt_tuning
+        learner_method = TTA_DomainAware_Prompt_tuning
     elif conf.args.method == "prefixtune":
         learner_method = None
     elif conf.args.method == "adaptertune":
@@ -236,16 +240,6 @@ def main():
 
     # tensorboard.close()
 
-    # if we want to remove checkpoints
-    # if conf.args.remove_cp:
-    #     best_path = checkpoint_path + 'cp_best.pth.tar'
-    #     last_path = checkpoint_path + 'cp_last.pth.tar'
-    #     try:
-    #         os.remove(best_path)
-    #         os.remove(last_path)
-    #     except Exception as e:
-    #         pass
-
 
 
 
@@ -330,7 +324,10 @@ def parse_arguments(argv):
     parser.add_argument('--resume', action='store_true', help='resume from saved lastest model')
 
 
-    ### Used for NOTE ###
+    ### Used for Ours ###
+    parser.add_argument('--adapt_type', type=str, default='all', help='adaptation type of online learning')
+    parser.add_argument('--use_gt', action='store_true', help='if specified, use ground truth during online learning')
+
     # parser.add_argument('--iabn', action='store_true', help='replace bn with iabn layer')
     # parser.add_argument('--iabn_k', type=float, default=4.0,
     #                     help='k for iabn')
