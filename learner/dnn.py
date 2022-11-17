@@ -373,9 +373,9 @@ class DNN():
     def log_loss_results(self, condition, epoch, loss_avg):
 
         # print loss
-        print('{:s}: [epoch : {:d}]\tLoss: {:.6f} \t'.format(
-            condition, epoch, loss_avg
-        ))
+        # print('{:s}: [epoch : {:d}]\tLoss: {:.6f} \t'.format(
+        #     condition, epoch, loss_avg
+        # ))
 
         # self.tensorboard.log_scalar(condition + '/loss_sum', loss_avg, epoch)
 
@@ -584,9 +584,9 @@ class DNN():
             class_cm_test_data = confusion_matrix(tgt_cls.cpu(), y_pred.cpu(), labels=labels)
 
 
-        print('{:s}: [epoch : {:d}]\tLoss: {:.6f} \t'.format(
-            condition, epoch, class_loss_of_test_data
-        ))
+        # print('{:s}: [epoch : {:d}]\tLoss: {:.6f} \t'.format(
+        #     condition, epoch, class_loss_of_test_data
+        # ))
         class_accuracy = 100.0 * np.sum(np.diagonal(class_cm_test_data)) / np.sum(class_cm_test_data)
         print('[epoch:{:d}] {:s} {:s} class acc: {:.3f}'.format(epoch, condition, 'test', class_accuracy))
         # self.tensorboard.log_confusion_matrix(condition + '_accuracy_class_' + 'test', class_cm_test_data,
@@ -739,31 +739,65 @@ class DNN():
 
         return class_accuracy_of_test_data, loss
 
-    def set_gradients(self):
-        assert conf.args.method in ['prompttune', 'ttaprompttune']
-        for params in self.net.parameters():
-            params.requires_grad = True
-        for params in self.net.backbone.parameters():
-            params.requires_grad = False
-        for params in self.net.backbone.get_input_embeddings().parameters():
-            params.requires_grad = True
+    def set_gradients(self, type='all'):
+        assert "prompttune" in conf.args.method
+        from utils.util_functions import is_instance_of_any
 
-    def set_gradients_bn(self):
-        assert conf.args.method in ['prompttune', 'ttaprompttune']
-        for m in self.net.modules():
-            if not (isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm1d)):
-                for params in m.parameters():
-                    params.requires_grad= False
-            else:
-                for params in m.parameters():
-                    params.requires_grad = True
+        if type == 'all':
+            for params in self.net.parameters():
+                params.requires_grad = True
+            for params in self.net.backbone.parameters():
+                params.requires_grad = False
+            for params in self.net.backbone.get_input_embeddings().parameters():
+                params.requires_grad = True
 
-    def set_gradients_bnln(self):
-        assert conf.args.method in ['prompttune', 'ttaprompttune']
-        for m in self.net.modules():
-            if not (isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.BatchNorm1d) or isinstance(m, nn.LayerNorm)):
-                for params in m.parameters():
-                    params.requires_grad= False
+            for m in self.net.modules():
+                if is_instance_of_any(m, [nn.BatchNorm1d, nn.BatchNorm2d]):
+                    if conf.args.use_learned_stats:
+                        m.track_running_stats = True
+                        m.momentum = conf.args.bn_momentum
+                    else:
+                        m.track_running_stats = False
+                        m.running_mean = None
+                        m.running_var = None
+
+                    m.weight.requires_grad_(True)
+                    m.bias.requires_grad_(True)
+
+        elif type in ['bn', 'ln', 'bnln']:
+            if type == 'bn':
+                instance_list = [nn.BatchNorm1d, nn.BatchNorm2d]
+            elif type == 'ln':
+                instance_list = [nn.LayerNorm]
             else:
-                for params in m.parameters():
-                    params.requires_grad = True
+                instance_list = [nn.BatchNorm1d, nn.BatchNorm2d, nn.LayerNorm]
+
+            for m in self.net.modules():
+                if is_instance_of_any(m, instance_list):
+                    if conf.args.use_learned_stats:
+                        m.track_running_stats = True
+                        m.momentum = conf.args.bn_momentum
+                    else:
+                        m.track_running_stats = False
+                        m.running_mean = None
+                        m.running_var = None
+
+                    m.weight.requires_grad_(True)
+                    m.bias.requires_grad_(True)
+                else:
+                    for params in m.parameters():
+                        params.requires_grad = False
+
+        elif type == 'embed':
+            for params in self.net.parameters():
+                params.requires_grad = False
+            for params in self.net.backbone.parameters():
+                params.requires_grad = False
+            for params in self.net.backbone.get_input_embeddings().parameters():
+                params.requires_grad = True
+
+        elif type == 'none':
+            for params in self.net.parameters():
+                params.requires_grad = False
+        else:
+            raise NotImplementedError
