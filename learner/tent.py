@@ -100,9 +100,6 @@ class TENT(DNN):
                     for i in range(len(preds_of_data)):
                         loss += entropy_loss(preds_of_data[i].view(-1, 5+conf.args.opt['num_class'])[:, 5:]) # loss for classes starts from 5
 
-
-
-
                 else:
                     loss = entropy_loss(preds_of_data)
 
