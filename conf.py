@@ -820,7 +820,7 @@ IMDBOpt = {
 
 SST2Opt = {
     'name': 'sst-2',
-    'batch_size': 32,
+    'batch_size': 16,
 
     'learning_rate': 0.00001,  # initial learning rate # 1e-5
     'prompt_learning_rate': 0.3,
@@ -837,7 +837,7 @@ SST2Opt = {
 
 FineFoodOpt = {
     'name': 'finefood',
-    'batch_size': 32,
+    'batch_size': 16,
 
     'learning_rate': 0.00001,  # initial learning rate # 1e-5
     'prompt_learning_rate': 0.3,
@@ -854,7 +854,7 @@ FineFoodOpt = {
 
 TomatoesOpt = {
     'name': 'tomatoes',
-    'batch_size': 32,
+    'batch_size': 16,
 
     'learning_rate': 0.00001,  # initial learning rate # 1e-5
     'prompt_learning_rate': 0.3,
