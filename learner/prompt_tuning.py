@@ -21,15 +21,24 @@ class Prompt_tuning(DNN):
         self.initialize_from_vocab = initialize_from_vocab
         # print_summary(self.net) # for debugging purpose
 
+        if conf.args.parallel:
+            input_embeddings = self.net.module.get_input_embeddings()
+        else:
+            input_embeddings = self.net.get_input_embeddings()
+
+
         ## only can be used with huggingface transformer models
         self.soft_embedding = SoftEmbedding.SoftEmbedding(
-            self.net.get_input_embeddings(),
+            input_embeddings,
             n_tokens=self.n_tokens,
             initialize_from_vocab = self.initialize_from_vocab
         )
 
         # setting the previous input_embeddings to current embedding
-        self.net.set_input_embeddings(self.soft_embedding)
+        if conf.args.parallel:
+            self.net.module.set_input_embeddings(self.soft_embedding)
+        else:
+            self.net.set_input_embeddings(self.soft_embedding)
 
         # load checkpoint from specified path, if specified
         checkpoint_path = conf.args.load_checkpoint_path

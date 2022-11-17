@@ -6,6 +6,7 @@ import models
 from models.emebdding_layer import TTAEmbedding
 from utils.loss_functions import *
 from utils.util_functions import print_summary
+from transformers import BertTokenizer
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
 
 # def initialize_gradient(module, bool):
@@ -20,17 +21,24 @@ class TTA_Prompt_tuning(DNN):
         self.initialize_from_vocab = initialize_from_vocab
         # print_summary(self.net) # for debugging purpose
 
+        if conf.args.parallel:
+            input_embeddings = self.net.module.get_input_embeddings()
+        else:
+            input_embeddings = self.net.get_input_embeddings()
+
         ## only can be used with huggingface transformer models
         self.tta_embedding = TTAEmbedding.TTAEmbedding(
-            self.net.get_input_embeddings(),
+            input_embeddings,
             n_tokens=self.n_tokens,
             initialize_from_vocab = self.initialize_from_vocab,
             model_config = self.net.get_config()
         )
 
         # setting the previous input_embeddings to current embedding
-        self.net.set_input_embeddings(self.tta_embedding)
-
+        if conf.args.parallel:
+            self.net.module.set_input_embeddings(self.tta_embedding)
+        else:
+            self.net.set_input_embeddings(self.tta_embedding)
 
         # load checkpoint from specified path, if specified
         checkpoint_path = conf.args.load_checkpoint_path
@@ -40,9 +48,9 @@ class TTA_Prompt_tuning(DNN):
             self.load_checkpoint(checkpoint_path)
 
         # initialize requires_grad of model
-        self.set_gradients()
-
-    # for training source model
+        self.set_gradients(conf.args.adapt_type)
+        print_summary(self.net)
+    # for training source modelx
     def train(self, current_num_sample):
         """
         Train the model
@@ -127,21 +135,18 @@ class TTA_Prompt_tuning(DNN):
         # setup models
         self.net.train()
 
-        if conf.args.adapt_with_ln:
-            self.set_gradients_bnln()
-        else:
-            self.set_gradients_bn()
+        # self.set_gradients(conf.args.adapt_type)
 
         from utils.util_functions import print_summary
-        print_summary(self.net)
+        # print_summary(self.net)
 
         if len(feats) == 1:  # avoid BN error
             self.net.eval()
 
         feats, cls, dls = self.mem.get_memory()
-        feats, cls, dls = torch.stack(feats), cls, torch.stack(dls)
+        feats, cls, dls = torch.stack(feats), torch.LongTensor(cls), torch.stack(dls)
 
-        dataset = torch.utils.data.TensorDataset(feats)
+        dataset = torch.utils.data.TensorDataset(feats, cls)
         data_loader = DataLoader(dataset, batch_size=conf.args.opt['batch_size'],
                                  shuffle=True,
                                  drop_last=False, pin_memory=False)
@@ -149,14 +154,18 @@ class TTA_Prompt_tuning(DNN):
         entropy_loss = HLoss()
 
         for e in range(conf.args.epoch):
-
-            for batch_idx, (feats,) in enumerate(data_loader):
+            for batch_idx, (feats,cls,) in enumerate(data_loader):
                 feats = feats.to(device)
+                cls = cls.to(device)
 
                 # prediction from network
                 preds_of_data = self.net(feats)
                 # entropy loss of the predictions
-                loss = entropy_loss(preds_of_data)
+                if conf.args.use_gt:
+                    loss = self.class_criterion(preds_of_data, cls)
+                else:
+                    loss = entropy_loss(preds_of_data)
+
 
                 # backpropagate the loss
                 self.optimizer.zero_grad()
@@ -188,11 +197,8 @@ class TTA_Prompt_tuning(DNN):
             model_config=temp_net.get_config()
         )
         temp_net.set_input_embeddings(ttaembedding)
-        self.net = temp_net
+        self.net.load_state_dict(temp_net.state_dict(), strict=True)
         self.net.to(device)
-
-        # set requires_grad of model
-        self.set_gradients()
 
 
 
