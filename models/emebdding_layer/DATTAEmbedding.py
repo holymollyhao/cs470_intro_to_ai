@@ -6,8 +6,9 @@ import torch
 import torch.nn as nn
 import conf
 from transformers import BertTokenizer
-from utils.util_functions import get_max_position_embeddings
-device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
+from utils.util_functions import get_max_position_embeddings, get_device
+
+device = get_device()
 
 domain_dict = {
     "sst-2": "Do sentiment analysis on the following sentence ",

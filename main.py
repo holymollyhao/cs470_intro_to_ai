@@ -8,7 +8,6 @@ import torch
 import models
 import models.BaseTransformer
 import models.emebdding_layer.SoftEmbedding
-import torchvision
 import time
 import os
 import conf
@@ -21,7 +20,7 @@ os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 def main():
     ######################################################################
-    device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
+    device = get_device()
     # Assume that we are on a CUDA machine, then this should print a CUDA device:
     print(device)
 
@@ -38,22 +37,7 @@ def main():
     model = None
     tokenizer = None
 
-    if conf.args.model == "resnet50_scratch":
-        model = torchvision.models.resnet50(pretrained=False)
-    elif conf.args.model == "resnet50_pretrained":
-        model = torchvision.models.resnet50(pretrained=True)
-    elif conf.args.model == "resnet18":
-        from models import ResNet
-        model = ResNet.ResNet18()
-    elif conf.args.model == "resnet18_scratch":
-        model = torchvision.models.resnet18(pretrained=False)
-    elif conf.args.model == "resnet18_pretrained":
-        model = torchvision.models.resnet18(pretrained=True)
-    elif conf.args.model == "resnet34_scratch":
-        model = torchvision.models.resnet34(pretrained=False)
-    elif conf.args.model == "resnet34_pretrained":
-        model = torchvision.models.resnet34(pretrained=True)
-    elif conf.args.model == "bert":
+    if conf.args.model == "bert":
         model = models.BaseTransformer.BaseNet(model_name='bert')
         tokenizer = model.get_tokenizer()
     elif conf.args.model == "distilbert":
@@ -77,17 +61,8 @@ def main():
     elif conf.args.model == "bart":
         model = models.BaseTransformer.BaseNet(model_name='bart')
         tokenizer = model.get_tokenizer()
-    elif conf.args.model == "rvt":
-        print('constructing rvt+ small')
-        from timm.models import create_model
-        model = create_model('rvt_small_plus', opt=opt).to(device)
-        print(model)
-
-    # config = AutoConfig.from_pretrained(config_name, cache_dir=conf.args.cache_dir)
-    # tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, cache_dir=conf.args.cache_dir)
 
     result_path, checkpoint_path, log_path = get_path()
-    # tensorboard = Tensorboard(log_path)
 
     ################### Load method #################
 
@@ -145,8 +120,6 @@ def main():
                                                         tokenizer=tokenizer)
 
     ################### Set Learner #################
-    # learner = learner_method(model, tensorboard=tensorboard, source_dataloader=source_data_loader,
-    #                          target_dataloader=target_data_loader, write_path=log_path)
     learner = learner_method(model, source_dataloader=source_data_loader,
                              target_dataloader=target_data_loader, write_path=log_path)
 
@@ -309,17 +282,12 @@ def parse_arguments(argv):
     ### Used for Test-time Adaptation ###
     parser.add_argument('--update_every_x', type=int, default=64, help='number of target samples used for every update')
     parser.add_argument('--online', action='store_true', help='training via online learning?')
-    parser.add_argument('--adapt_with_ln', action='store_true', help='adapt layer normalization layer as well')
 
     ### Memory Type ###
     parser.add_argument('--memory_size', type=int, default=64,
                         help='number of previously trained data to be used for training')
     parser.add_argument('--memory_type', type=str, default='FIFO',
-                        help='FIFO'
-                             'Reservoir'
-                             'Diversity'
-                             'CBRS'
-                        )
+                        help='FIFO')
 
     ### Used for Efficient Processing ###
     parser.add_argument('--save_every_n', type=int, default=-1, help='save checkpoint every n')
@@ -333,11 +301,6 @@ def parse_arguments(argv):
     parser.add_argument('--n_tokens', type=int, default=20, help='number of tokens to use')
     parser.add_argument('--no_init_from_vocab', action='store_true', help='if specified, do not initialize from vocab')
     parser.add_argument('--set_backbone_true', action='store_true', help='if specified, the backbone gradients are set to true')
-
-    # parser.add_argument('--iabn', action='store_true', help='replace bn with iabn layer')
-    # parser.add_argument('--iabn_k', type=float, default=4.0,
-    #                     help='k for iabn')
-    # parser.add_argument('--pretrain_wo_iabn', action='store_true', help='replace bn with iabn layer wo pretraining the model with iabn')
 
     return parser.parse_args()
 

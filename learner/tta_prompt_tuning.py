@@ -1,15 +1,14 @@
-import conf
-from .dnn import DNN
+import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import models
+
+import conf
+from .dnn import DNN
 from models.emebdding_layer import TTAEmbedding
 from utils.loss_functions import *
-from utils.util_functions import print_summary
-from transformers import BertTokenizer
-device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
+from utils.util_functions import print_summary, get_device
 
-# def initialize_gradient(module, bool):
+device = get_device()
 
 class TTA_Prompt_tuning(DNN):
     def __init__(self, *args, **kwargs):
@@ -95,7 +94,6 @@ class TTA_Prompt_tuning(DNN):
 
 
     def train_online(self, current_num_sample): # adpat to target without looking at source
-
         """
         Train the model
         """
@@ -159,12 +157,10 @@ class TTA_Prompt_tuning(DNN):
                 else:
                     loss = entropy_loss(preds_of_data)
 
-
                 # backpropagate the loss
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-
                 self.scheduler.step()
 
         return TRAINED

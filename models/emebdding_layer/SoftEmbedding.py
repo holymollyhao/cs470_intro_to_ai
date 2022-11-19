@@ -5,7 +5,6 @@ imported from https://github.com/kipgparker/soft-prompt-tuning/blob/main/soft_em
 import torch
 import torch.nn as nn
 
-
 class SoftEmbedding(nn.Module):
     def __init__(self,
                  wte: nn.Embedding,

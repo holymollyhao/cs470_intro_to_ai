@@ -83,7 +83,6 @@ def load_backbone(name, output_attentions=False):
     return backbone, tokenizer
 
 class BaseNet(nn.Module):
-
     def __init__(self, model_name='', mode='base'):
         super(BaseNet, self).__init__()
         self.model_name = model_name

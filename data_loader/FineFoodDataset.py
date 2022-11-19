@@ -1,13 +1,5 @@
-import os
-import warnings
+import os, time
 import torch.utils.data
-import torchvision.datasets as datasets
-import torchvision.transforms as transforms
-
-import pandas as pd
-import time
-import numpy as np
-import sys
 import conf
 
 opt = conf.FineFoodOpt

@@ -1,15 +1,14 @@
-import conf
-from .dnn import DNN
+import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import models
+
+import conf
+from .dnn import DNN
 from models.emebdding_layer import SoftEmbedding
 from utils.loss_functions import *
-from utils.util_functions import print_summary
+from utils.util_functions import print_summary, get_device
 
-device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
-
-# def initialize_gradient(module, bool):
+device = get_device()
 
 class Prompt_tuning(DNN):
     def __init__(self, *args, **kwargs):
@@ -92,12 +91,10 @@ class Prompt_tuning(DNN):
             self.scheduler.step()
 
 
-
     def train_online(self, current_num_sample):
-
         """
-                        Train the model
-                        """
+        Train the model
+        """
 
         TRAINED = 0
         SKIPPED = 1
@@ -148,7 +145,6 @@ class Prompt_tuning(DNN):
 
             for batch_idx, (feats,) in enumerate(data_loader):
                 feats = feats.to(device)
-
                 preds_of_data = self.net(feats)
 
                 loss = entropy_loss(preds_of_data)
@@ -156,8 +152,6 @@ class Prompt_tuning(DNN):
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-
-                # take scheduler step
                 self.scheduler.step()
 
 

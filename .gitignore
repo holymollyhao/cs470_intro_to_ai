@@ -5,3 +5,6 @@
 .idea/cs470_intro_to_ai.iml
 *.iml
 *.xml
+
+__pycache__/
+log/

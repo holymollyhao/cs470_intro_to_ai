@@ -8,12 +8,7 @@ from .SST2Dataset import SST2Dataset
 from .FineFoodDataset import FineFoodDataset
 from .TomatoesDataset import TomatoesDataset
 
-
-import os
-import pickle
-import re
-import random
-import copy
+import os, re, random
 
 import conf
 

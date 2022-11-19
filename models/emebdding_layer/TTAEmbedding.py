@@ -7,7 +7,6 @@ import torch.nn as nn
 import conf
 from utils.util_functions import get_max_position_embeddings
 
-from transformers import BertTokenizer
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
 
 class TTAEmbedding(nn.Module):

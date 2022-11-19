@@ -3,32 +3,22 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 import numpy as np
-import transformers
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_auc_score
 from sklearn.metrics import f1_score
-from sklearn.preprocessing import label_binarize
-import math
+
 import conf
-from copy import deepcopy
-import random
-from sklearn.manifold import TSNE
-import seaborn as sns
-import pandas as pd
-import matplotlib.pyplot as plt
-from torch.utils.data import DataLoader
 from utils import memory
-
-from utils import iabn
 from utils.logging import *
-from utils.bn_remover import *
 from utils.normalize_layer import *
-device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
-torch.cuda.set_device(
-    conf.args.gpu_idx)  # this prevents unnecessary gpu memory allocation to cuda:0 when using estimator
+from utils.util_functions import get_device
 
+device = get_device()
+
+# this prevents unnecessary gpu memory allocation to cuda:0 when using estimator
+torch.cuda.set_device(conf.args.gpu_idx)
 
 class DNN():
     def __init__(self, model, source_dataloader, target_dataloader, write_path):
@@ -39,26 +29,12 @@ class DNN():
         self.source_dataloader = source_dataloader
         self.target_dataloader = target_dataloader
 
-        # if conf.args.tgt_train_dist == 0 and \
-        #         conf.args.dataset in ['cifar10', 'cifar100', 'vlcs', 'officehome', 'pacs', 'tinyimagenet', 'svhn',
-        #                               'visda', 'cmnist', 'rmnist', 'terra_incognita','domainnet', 'mnist', 'finefood',
-        #                               'sst-2', 'imdb', 'tomatoes']:
-        #     self.tgt_train_dist = 4  # Dirichlet is default for non-real-distribution data
-        # else:
-        #     self.tgt_train_dist = conf.args.tgt_train_dist
-
         self.target_data_processing()
         self.write_path = write_path
 
         ################## Init & prepare model###################
         self.conf_list = []
         self.net = model
-
-
-        # Add normalization layers (for vision dataset), additional normalization layer in front of network
-        norm_layer = get_normalize_layer(conf.args.dataset)
-        if norm_layer:
-            self.net = torch.nn.Sequential(norm_layer, self.net)
 
         # Parallelization
         if conf.args.parallel and torch.cuda.device_count() > 1:
@@ -72,30 +48,16 @@ class DNN():
                                      weight_decay=conf.args.opt['weight_decay'])
         self.scheduler = torch.optim.lr_scheduler.LinearLR(self.optimizer)
 
-
         self.class_criterion = nn.CrossEntropyLoss() # already contains softmax, do not include softmax in the layer
 
-
         ################## Set Memory Management Techniques ###################
-        if conf.args.memory_type == 'FIFO':
-            self.mem = memory.FIFO(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'CBRS':
-            self.mem = memory.CBRS_debug(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'Reservoir':
-            self.mem = memory.Reservoir(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'Diversity':
-            self.mem = memory.Diversity(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'CBFIFO':
-            self.mem = memory.CBFIFO_debug(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'CBReservoir':
-            self.mem = memory.CBReservoir_debug(capacity=conf.args.memory_size)
+        self.mem = memory.FIFO(capacity=conf.args.memory_size)
 
         self.json = {}
         self.occurred_class = [0 for i in range(conf.args.opt['num_class'])]
 
 
     def target_data_processing(self):
-
         features = []
         cl_labels = []
         do_labels = []
@@ -131,7 +93,6 @@ class DNN():
             result_cl_labels = result_cl_labels[:num_samples]
             result_do_labels = result_do_labels[:num_samples]
 
-
         remainder = len(result_feats) % conf.args.update_every_x  # drop leftover samples
         if remainder == 0:
             pass
@@ -148,9 +109,6 @@ class DNN():
             self.target_train_set = (torch.stack(result_feats),
                                      result_cl_labels,
                                      torch.stack(result_do_labels))
-
-        # self.target_support_remaining_set = (torch.stack(features), torch.stack(cl_labels), torch.stack(do_labels))
-
 
     def save_checkpoint(self, epoch, epoch_acc, best_acc, checkpoint_path):
 
@@ -230,6 +188,7 @@ class DNN():
             )
         else:
             raise NotImplementedError
+
         temp_net.set_input_embeddings(embedding)
         self.net.load_state_dict(temp_net.state_dict(), strict=True)
         self.net.to(device)
@@ -242,10 +201,6 @@ class DNN():
         # setup models
 
         self.net.train()
-        # if conf.args.parallel:
-        #     self.net.module.set_backbone_gradient(conf.args.set_backbone_true)
-        # else:
-        #     self.net.set_backbone_gradient(conf.args.set_backbone_true)
         class_loss_sum = 0.0
         total_iter = 0
 
@@ -286,13 +241,6 @@ class DNN():
         avg_loss = class_loss_sum / total_iter
         return avg_loss
 
-    def train_online(self, current_num_sample):
-
-        """
-        Train the model
-        """
-        raise NotImplementedError  # training Src with online is currently not enabled.
-
     def evaluation(self, epoch, condition):
 
         #########################################################################################################
@@ -316,10 +264,6 @@ class DNN():
             y_pred = preds.max(1, keepdim=False)[1]
             class_cm_test_data = confusion_matrix(tgt_cls.cpu(), y_pred.cpu(), labels=labels)
 
-
-        # print('{:s}: [epoch : {:d}]\tLoss: {:.6f} \t'.format(
-        #     condition, epoch, class_loss_of_test_data
-        # ))
         class_accuracy = 100.0 * np.sum(np.diagonal(class_cm_test_data)) / np.sum(class_cm_test_data)
         print('[epoch:{:d}] {:s} {:s} class acc: {:.3f}'.format(epoch, condition, 'test', class_accuracy))
 

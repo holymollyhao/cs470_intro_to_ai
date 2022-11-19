@@ -1,11 +1,13 @@
-import conf
-from .dnn import DNN
+import torch
+from torch import nn
 from torch.utils.data import DataLoader
 
+import conf
+from .dnn import DNN
 from utils.loss_functions import *
+from utils.util_functions import get_device
 
-device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
-
+device = get_device()
 
 class LN_TENT(DNN):
     def __init__(self, *args, **kwargs):
@@ -60,23 +62,16 @@ class LN_TENT(DNN):
         if not conf.args.use_learned_stats: #batch-based inference
             self.evaluation_online(current_num_sample, '', self.mem.get_memory())
 
-
-
         # setup models
         self.net.train()
 
         from utils.util_functions import print_summary
-        # print_summary(self.net)
 
         if len(feats) == 1:  # avoid BN error
-            # self.feature_extractor.eval()
-            # self.class_classifier.eval()
             self.net.eval()
 
         feats, cls, dls = self.mem.get_memory()
         feats, cls, dls = torch.stack(feats), cls, torch.stack(dls)
-
-
 
         dataset = torch.utils.data.TensorDataset(feats)
         data_loader = DataLoader(dataset, batch_size=conf.args.opt['batch_size'],
@@ -86,19 +81,11 @@ class LN_TENT(DNN):
         entropy_loss = HLoss()
 
         for e in range(conf.args.epoch):
-
             for batch_idx, (feats,) in enumerate(data_loader):
                 feats = feats.to(device)
-
                 preds_of_data = self.net(feats)
 
-                if isinstance(preds_of_data, list): #kitti
-                    loss = 0
-                    for i in range(len(preds_of_data)):
-                        loss += entropy_loss(preds_of_data[i].view(-1, 5+conf.args.opt['num_class'])[:, 5:]) # loss for classes starts from 5
-
-                else:
-                    loss = entropy_loss(preds_of_data)
+                loss = entropy_loss(preds_of_data)
 
                 self.optimizer.zero_grad()
 
@@ -108,6 +95,5 @@ class LN_TENT(DNN):
 
                 # take scheduler step
                 self.scheduler.step()
-
 
         return TRAINED
