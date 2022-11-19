@@ -95,7 +95,6 @@ class Fine_tuning(DNN):
             if not (current_num_sample == len(self.target_train_set[
                                                   0]) and conf.args.update_every_x >= current_num_sample):  # update with entire data
 
-                self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=self.previous_train_loss)
                 return SKIPPED
 
         # Evaluate with a batch
@@ -130,8 +129,6 @@ class Fine_tuning(DNN):
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
-
-        self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=0)
 
 
 

@@ -25,6 +25,7 @@ dimension_dictionary = {
     'bert-small': 512,
     'bert-medium': 512,
     'mobilebert': 512,
+    'bart': 1024,
 }
 
 
@@ -70,6 +71,12 @@ def load_backbone(name, output_attentions=False):
         backbone = MobileBertModel.from_pretrained('google/mobilebert-uncased')
         tokenizer = MobileBertTokenizer.from_pretrained('google/mobilebert-uncased')
         tokenizer.name = 'mobilebert-uncased'
+    elif name == 'bart':
+        from transformers import  BartModel
+        from transformers import BartTokenizer
+        backbone = BartModel.from_pretrained("facebook/bart-large")
+        tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
+        tokenizer.name = 'bart'
     else:
         raise ValueError('No matching backbone network')
 
@@ -92,15 +99,6 @@ class BaseNet(nn.Module):
             self.dense_layer = nn.Linear(dim, dim)
             self.class_layer = nn.Linear(dim, self.n_classes)
 
-    # def set_method(self, method="prompttune", args=None):
-    #     if method == "prompttune":
-    #         softembedding = SoftEmbedding(
-    #             self.backbone.get_input_embeddings(),
-    #             n_tokens=num_tokens,
-    #             initialize_from_vocab=initialize_from_vocab
-    #         )
-    #         self.backbone.set_input_embeddings(self.softembedding)
-
     def forward(self, x):
         if 'bert' in self.model_name:
             attention_mask = (x>0).float() # 0 is the pad_token for BERT family
@@ -117,8 +115,16 @@ class BaseNet(nn.Module):
                 out_p = torch.nn.ReLU()(out_p)  # (bs, dim)
                 out_p = self.dropout(out_p)  # (bs, dim)
                 out_cls = self.class_layer(out_p)  # (bs, num_labels) # TODO: include self.dense?
+        elif 'bart' in self.model_name:
+            attention_mask = (x > 0).float()
+            out_h = self.backbone(x, attention_mask)[0]  # hidden state. (bs, seq_len, dim)
 
-            return out_cls
+            out_p = out_h[:, 0]  # (bs, dim)
+            out_p = self.dense_layer(out_p)  # (bs, dim)
+            out_p = torch.nn.ReLU()(out_p)  # (bs, dim)
+            out_p = self.dropout(out_p)  # (bs, dim)
+            out_cls = self.class_layer(out_p)  # (bs, num_labels)
+        return out_cls
 
     def get_feature(self, x): # used for LAME, which replaces the final classification layer
         if 'bert' in self.model_name:
@@ -154,6 +160,6 @@ class BaseNet(nn.Module):
     def get_config(self):
         return self.backbone.config
 
-    def set_backbone_gradients_false(self):
+    def set_backbone_gradient(self, bool):
         for params in self.backbone.parameters():
-            params.requires_grad = False
+            params.requires_grad = bool

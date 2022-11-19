@@ -116,5 +116,12 @@ def is_instance_of_any(module, instance_list):
             return True
     return False
 
-# def get_default_log_prefix():
-#     print(path)
+def set_gradients(parameter, boolean):
+    for params in parameter:
+        params.requires_grad = boolean
+
+def get_max_position_embeddings():
+    if 'bert' in conf.args.model:
+        return 512, 512
+    elif 'bart' in conf.args.model:
+        return 1024, 1024

@@ -30,7 +30,6 @@ class Ours(DNN):
             input_embeddings,
             n_tokens=self.n_tokens,
             initialize_from_vocab = self.initialize_from_vocab,
-            model_config = self.net.get_config()
         )
 
         # setting the previous input_embeddings to current embedding
@@ -125,7 +124,6 @@ class Ours(DNN):
             if not (current_num_sample == len(self.target_train_set[
                                                   0]) and conf.args.update_every_x >= current_num_sample):  # update with entire data
 
-                self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=self.previous_train_loss)
                 return SKIPPED
 
         if not conf.args.use_learned_stats: #batch-based inference
@@ -170,36 +168,7 @@ class Ours(DNN):
                 loss.backward()
                 self.optimizer.step()
 
-        self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=0)
-
         return TRAINED
-
-
-    # loading from source, which does not have any softempbedding layer
-    def load_checkpoint_naive(self, checkpoint_path=''):
-        checkpoint_dict = torch.load(checkpoint_path, map_location=f'cuda:{conf.args.gpu_idx}')
-        try:
-            checkpoint = checkpoint_dict['state_dict']
-        except KeyError:
-            checkpoint = checkpoint_dict
-
-        from models.BaseTransformer import BaseNet
-        temp_net = BaseNet(self.net.model_name)
-        temp_net.load_state_dict(checkpoint, strict=True)
-
-        from models.emebdding_layer.TTAEmbedding import TTAEmbedding
-        ttaembedding = TTAEmbedding(
-            temp_net.get_input_embeddings(),
-            n_tokens=self.n_tokens,
-            initialize_from_vocab=self.initialize_from_vocab,
-            model_config=temp_net.get_config()
-        )
-        temp_net.set_input_embeddings(ttaembedding)
-        self.net = temp_net
-        self.net.to(device)
-
-        # set requires_grad of model
-        self.set_gradients()
 
 
 

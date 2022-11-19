@@ -23,6 +23,9 @@ class LN_TENT(DNN):
                 module.weight.requires_grad_(True)
                 module.bias.requires_grad_(True)
 
+        from utils.util_functions import print_summary
+        print_summary(self.net)
+
     def train_online(self, current_num_sample):
         """
         Train the model
@@ -50,7 +53,6 @@ class LN_TENT(DNN):
             if not (current_num_sample == len(self.target_train_set[
                                                   0]) and conf.args.update_every_x >= current_num_sample):  # update with entire data
 
-                self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=self.previous_train_loss)
                 return SKIPPED
 
 
@@ -99,10 +101,13 @@ class LN_TENT(DNN):
                     loss = entropy_loss(preds_of_data)
 
                 self.optimizer.zero_grad()
+
                 loss.backward()
+
                 self.optimizer.step()
 
+                # take scheduler step
+                self.scheduler.step()
 
-        self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=0)
 
         return TRAINED

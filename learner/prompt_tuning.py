@@ -15,11 +15,10 @@ class Prompt_tuning(DNN):
     def __init__(self, *args, **kwargs):
         super(Prompt_tuning, self).__init__(*args, **kwargs)
 
-        n_tokens = 20
-        initialize_from_vocab = True,
+        n_tokens = conf.args.n_tokens
+        initialize_from_vocab = not conf.args.no_init_from_vocab,
         self.n_tokens = n_tokens
         self.initialize_from_vocab = initialize_from_vocab
-        # print_summary(self.net) # for debugging purpose
 
         if conf.args.parallel:
             input_embeddings = self.net.module.get_input_embeddings()
@@ -47,8 +46,7 @@ class Prompt_tuning(DNN):
         elif checkpoint_path:
             self.load_checkpoint(checkpoint_path)
 
-        # initialize requires_grad of model
-        self.set_gradients()
+        self.set_gradients('embed')
 
 
     # prefix tuning can only be done in an offline manner
@@ -91,8 +89,7 @@ class Prompt_tuning(DNN):
             self.optimizer.step()
 
             # take scheduler step
-            if conf.args.dataset in ['cifar10', 'cifar100', 'harth', 'reallifehar', 'extrasensory']:
-                self.scheduler.step()
+            self.scheduler.step()
 
 
 
@@ -125,7 +122,6 @@ class Prompt_tuning(DNN):
             if not (current_num_sample == len(self.target_train_set[
                                                   0]) and conf.args.update_every_x >= current_num_sample):  # update with entire data
 
-                self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=self.previous_train_loss)
                 return SKIPPED
 
         # Evaluate with a batch
@@ -161,31 +157,8 @@ class Prompt_tuning(DNN):
                 loss.backward()
                 self.optimizer.step()
 
-        self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=0)
-
-    # loading from source, which does not have any softempbedding layer
-    def load_checkpoint_naive(self, checkpoint_path=''):
-        checkpoint_dict = torch.load(checkpoint_path, map_location=f'cuda:{conf.args.gpu_idx}')
-        try:
-            checkpoint = checkpoint_dict['state_dict']
-        except KeyError:
-            checkpoint = checkpoint_dict
-
-        from models.BaseTransformer import BaseNet
-        temp_net = BaseNet(self.net.model_name)
-        temp_net.load_state_dict(checkpoint, strict=True)
-
-        from models.emebdding_layer.SoftEmbedding import SoftEmbedding
-        softembedding = SoftEmbedding(
-            temp_net.get_input_embeddings(),
-            n_tokens=self.n_tokens,
-            initialize_from_vocab=self.initialize_from_vocab,
-        )
-        temp_net.set_input_embeddings(softembedding)
-        self.net = temp_net
-        self.net.to(device)
-        # set requires_grad of model
-        self.set_gradients()
+                # take scheduler step
+                self.scheduler.step()
 
 
 

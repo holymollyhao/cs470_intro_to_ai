@@ -74,6 +74,9 @@ def main():
     elif conf.args.model == "mobilebert":
         model = models.BaseTransformer.BaseNet(model_name='mobilebert')
         tokenizer = model.get_tokenizer()
+    elif conf.args.model == "bart":
+        model = models.BaseTransformer.BaseNet(model_name='bart')
+        tokenizer = model.get_tokenizer()
     elif conf.args.model == "rvt":
         print('constructing rvt+ small')
         from timm.models import create_model
@@ -123,7 +126,7 @@ def main():
     ################### Load Dataset #################
     print('##############Source Data Loading...##############')
     source_data_loader = data_loader.domain_data_loader(conf.args.dataset, conf.args.src,
-                                                        conf.args.opt['file_path'],
+                                                        conf.args.opt['file_path'] + '_' + conf.args.model,
                                                         batch_size=conf.args.opt['batch_size'],
                                                         valid_split=0,  # to be used for the validation
                                                         test_split=0,
@@ -133,7 +136,7 @@ def main():
 
     print('##############Target Data Loading...##############')
     target_data_loader = data_loader.domain_data_loader(conf.args.dataset, conf.args.tgt,
-                                                        conf.args.opt['file_path'],
+                                                        conf.args.opt['file_path'] + '_' + conf.args.model,
                                                         batch_size=conf.args.opt['batch_size'],
                                                         valid_split=0,
                                                         test_split=0,
@@ -327,6 +330,9 @@ def parse_arguments(argv):
     ### Used for Ours ###
     parser.add_argument('--adapt_type', type=str, default='all', help='adaptation type of online learning')
     parser.add_argument('--use_gt', action='store_true', help='if specified, use ground truth during online learning')
+    parser.add_argument('--n_tokens', type=int, default=20, help='number of tokens to use')
+    parser.add_argument('--no_init_from_vocab', action='store_true', help='if specified, do not initialize from vocab')
+    parser.add_argument('--set_backbone_true', action='store_true', help='if specified, the backbone gradients are set to true')
 
     # parser.add_argument('--iabn', action='store_true', help='replace bn with iabn layer')
     # parser.add_argument('--iabn_k', type=float, default=4.0,

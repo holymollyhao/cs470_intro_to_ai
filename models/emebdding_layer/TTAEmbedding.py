@@ -5,13 +5,15 @@ imported from https://github.com/kipgparker/soft-prompt-tuning/blob/main/soft_em
 import torch
 import torch.nn as nn
 import conf
-device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
+from utils.util_functions import get_max_position_embeddings
 
+from transformers import BertTokenizer
+device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
 
 class TTAEmbedding(nn.Module):
     def __init__(self,
                  wte: nn.Embedding,
-                 n_tokens: int = 10,
+                 n_tokens: int = 20,
                  random_range: float = 0.5,
                  initialize_from_vocab: bool = True,
                  model_config: dict={'max_position_embeddings' : 512}):
@@ -23,42 +25,23 @@ class TTAEmbedding(nn.Module):
             initialize_from_vocab (bool, optional): initalizes from default vocab. Defaults to True.
         """
         super(TTAEmbedding, self).__init__()
-        self.wte = wte
-        self.n_tokens = n_tokens
-        self.learned_embedding = nn.parameter.Parameter(self.initialize_embedding(wte,
-                                                                                  n_tokens,
-                                                                                  random_range,
-                                                                                  initialize_from_vocab))
-        print(f'wte size is : {self.wte.weight.size()}')
-        # torch.Size([16, 512 max_positional_embedding]) (input token size)
-        # torch.Size([16 batch size, 20 num tokens, 768 output size])
-        print('max positional embedding is : #################################')
-        print(model_config)
-        self.max_position_emebeddings = model_config.max_position_embeddings
-        self.interm_size = 200
-        self.output_size = self.wte.weight.size()[1]
-        self.learned_embedding_net = nn.Sequential(
-            # nn.Flatten(),
-            nn.Linear(self.max_position_emebeddings, self.interm_size),
-            nn.BatchNorm1d(self.interm_size),
-            nn.Linear(self.interm_size, self.n_tokens * self.output_size),
-        )
-        self.learned_embedding_net.to(device)
 
-    def initialize_embedding(self,
-                             wte: nn.Embedding,
-                             n_tokens: int = 10,
-                             random_range: float = 0.5,
-                             initialize_from_vocab: bool = True):
-        """initializes learned embedding
-        Args:
-            same as __init__
-        Returns:
-            torch.float: initialized using original schemes
-        """
-        if initialize_from_vocab:
-            return self.wte.weight[:n_tokens].clone().detach()
-        return torch.FloatTensor(n_tokens, wte.weight.size(1)).uniform_(-random_range, random_range)
+        self.wte = wte.to(device)
+        self.n_tokens =n_tokens
+
+        self.max_position_emebeddings, self.embed_tensor_size = get_max_position_embeddings()
+        self.output_size = self.wte.weight.size()[1]
+
+        self.new_linear = torch.nn.Parameter(
+            self.initialize_tensor(torch.randn(self.n_tokens, self.max_position_emebeddings))).to(device)
+        self.new_bias = torch.nn.Parameter(
+            self.initialize_tensor(torch.randn(self.n_tokens))).to(device)
+
+
+    def initialize_tensor(self,
+                           size,
+                           random_range: float = 0.5):
+        return torch.FloatTensor(size).uniform_(-random_range, random_range)
 
     def forward(self, tokens):
         """run forward pass
@@ -67,9 +50,10 @@ class TTAEmbedding(nn.Module):
         Returns:
             torch.float: encoding of text concatenated with learned task specifc embedding
         """
-        input_embedding = self.wte(tokens[:, self.n_tokens:])
-        input_to_learned_embedding = tokens.to(torch.float32).to(device)
-        input_to_learned_embedding -= input_to_learned_embedding.min(1, keepdim=True)[0]
-        input_to_learned_embedding /= input_to_learned_embedding.max(1, keepdim=True)[0]
-        learned_embedding = self.learned_embedding_net(input_to_learned_embedding).view(-1, self.n_tokens, self.output_size)
+        input_embedding = self.wte(tokens[:, :self.max_position_emebeddings - self.n_tokens])
+
+        learned_embedding_input = self.wte(tokens).transpose(2,1).to(device)
+        learned_embedding = torch.nn.functional.linear(learned_embedding_input,self.new_linear, self.new_bias).view(-1, self.n_tokens,self.output_size)
+        learned_embedding = torch.nn.functional.instance_norm(learned_embedding)
+
         return torch.cat([learned_embedding, input_embedding], 1)

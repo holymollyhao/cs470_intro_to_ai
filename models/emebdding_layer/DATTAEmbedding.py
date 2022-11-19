@@ -6,13 +6,14 @@ import torch
 import torch.nn as nn
 import conf
 from transformers import BertTokenizer
+from utils.util_functions import get_max_position_embeddings
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
 
 domain_dict = {
-    "sst-2": "sentimental analysis",
-    "imdb": "the review of the movie is :",
-    "tomatoes": "movie review analysis",
-    "finefood": "food review analysis",
+    "sst-2": "Do sentiment analysis on the following sentence ",
+    "imdb": "The is a movie review from imdb",
+    "tomatoes": "This is a movie review from rottentomatoes",
+    "finefood": "The follwing sentence is a food review:",
 }
 
 class DATTAEmbedding(nn.Module):
@@ -31,29 +32,24 @@ class DATTAEmbedding(nn.Module):
         """
         super(DATTAEmbedding, self).__init__()
 
-        self.wte = wte
+        self.wte = wte.to(device)
 
         self.tokens_domain_info = torch.tensor(BertTokenizer.from_pretrained('bert-base-uncased')\
-            .encode(domain_dict[conf.args.dataset], add_special_tokens=True)).long()
+            .encode(domain_dict[conf.args.dataset], add_special_tokens=True)).long().to(device)
 
+        self.n_tokens =n_tokens
         self.n_tokens_domain_info = len(self.tokens_domain_info)
-        self.n_tokens_embedding = n_tokens - len(self.n_tokens_domaininfo)
+        self.n_tokens_embedding = self.n_tokens - self.n_tokens_domain_info
 
-        self.learned_embedding = nn.parameter.Parameter(self.initialize_embedding(wte,
-                                                                                  self.n_tokens_embedding,
-                                                                                  random_range,
-                                                                                  initialize_from_vocab))
 
-        self.max_position_emebeddings = model_config.max_position_embeddings
-        self.interm_size = 200
+        self.max_position_emebeddings, self.embed_tensor_size = get_max_position_embeddings()
         self.output_size = self.wte.weight.size()[1]
-        self.learned_embedding_net = nn.Sequential(
-            # nn.Flatten(),
-            nn.Linear(self.max_position_emebeddings, self.interm_size),
-            nn.BatchNorm1d(self.interm_size),
-            nn.Linear(self.interm_size, self.n_tokens_embedding * self.output_size),
-        )
-        self.learned_embedding_net.to(device)
+
+        self.new_linear = torch.nn.Parameter(
+            self.initialize_tensor(torch.randn(self.n_tokens_embedding, self.max_position_emebeddings))).to(device)
+        self.new_bias = torch.nn.Parameter(
+            self.initialize_tensor(torch.randn(self.n_tokens_embedding))).to(device)
+
 
     def initialize_embedding(self,
                              wte: nn.Embedding,
@@ -70,6 +66,11 @@ class DATTAEmbedding(nn.Module):
             return self.wte.weight[:n_tokens].clone().detach()
         return torch.FloatTensor(n_tokens, wte.weight.size(1)).uniform_(-random_range, random_range)
 
+    def initialize_tensor(self,
+                           size,
+                           random_range: float = 0.5):
+        return torch.FloatTensor(size).uniform_(-random_range, random_range)
+
     def forward(self, tokens):
         """run forward pass
         Args:
@@ -77,13 +78,11 @@ class DATTAEmbedding(nn.Module):
         Returns:
             torch.float: encoding of text concatenated with learned task specifc embedding
         """
-        input_embedding = self.wte(tokens[:, :len(tokens) - self.n_tokens_embedding - self.n_tokens_domain_info])
-        domain_embedding = self.wte(self.tokens_domain_info)
+        input_embedding = self.wte(tokens[:, :self.max_position_emebeddings - self.n_tokens_embedding - self.n_tokens_domain_info].to(device))
+        domain_embedding = self.wte(self.tokens_domain_info.to(device)).repeat(input_embedding.shape[0],1,1)
 
-        input_to_learned_embedding = tokens.to(torch.float32).to(device)
-        input_to_learned_embedding -= input_to_learned_embedding.min(1, keepdim=True)[0]
-        input_to_learned_embedding /= input_to_learned_embedding.max(1, keepdim=True)[0]
-        learned_embedding = self.learned_embedding_net(input_to_learned_embedding).view(-1, self.n_tokens_embedding, self.output_size)
+        learned_embedding_input = self.wte(tokens).transpose(2,1).to(device)
+        learned_embedding = torch.nn.functional.linear(learned_embedding_input,self.new_linear, self.new_bias).view(-1, self.n_tokens_embedding,self.output_size)
+        learned_embedding = torch.nn.functional.instance_norm(learned_embedding)
 
-
-        return torch.cat([domain_embedding, learned_embedding, input_embedding], 1)
+        return torch.cat([learned_embedding, domain_embedding, input_embedding], 1)

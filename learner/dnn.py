@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
+import transformers
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_auc_score
@@ -38,52 +39,20 @@ class DNN():
         self.source_dataloader = source_dataloader
         self.target_dataloader = target_dataloader
 
-        if conf.args.tgt_train_dist == 0 and \
-                conf.args.dataset in ['cifar10', 'cifar100', 'vlcs', 'officehome', 'pacs', 'tinyimagenet', 'svhn',
-                                      'visda', 'cmnist', 'rmnist', 'terra_incognita','domainnet', 'mnist', 'finefood',
-                                      'sst-2', 'imdb', 'tomatoes']:
-            self.tgt_train_dist = 4  # Dirichlet is default for non-real-distribution data
-        else:
-            self.tgt_train_dist = conf.args.tgt_train_dist
+        # if conf.args.tgt_train_dist == 0 and \
+        #         conf.args.dataset in ['cifar10', 'cifar100', 'vlcs', 'officehome', 'pacs', 'tinyimagenet', 'svhn',
+        #                               'visda', 'cmnist', 'rmnist', 'terra_incognita','domainnet', 'mnist', 'finefood',
+        #                               'sst-2', 'imdb', 'tomatoes']:
+        #     self.tgt_train_dist = 4  # Dirichlet is default for non-real-distribution data
+        # else:
+        #     self.tgt_train_dist = conf.args.tgt_train_dist
 
         self.target_data_processing()
         self.write_path = write_path
 
         ################## Init & prepare model###################
         self.conf_list = []
-
-        # Load model
-        if conf.args.model in ['bert', 'distilbert', 'bert-tiny', 'bert-mini',
-                               'bert-small', 'bert-medium', 'mobilebert', 'rvt']:
-            self.net = model
-        elif 'resnet' in conf.args.model:
-            if conf.args.dataset == 'imagenet':
-                self.net = model
-            else:
-                num_feats = model.fc.in_features
-                model.fc = nn.Linear(num_feats, conf.args.opt['num_class'])  # match class number
-                self.net = model
-        else:
-            self.net = model.Net()
-
-
-        # IABN
-        # if conf.args.iabn and not conf.args.pretrain_wo_iabn:
-        #     iabn.convert_iabn(self.net)
-
-
-        # if conf.args.load_checkpoint_path and conf.args.model not in ['wideresnet28-10',
-        #                                                               'resnext29']:  # false if conf.args.load_checkpoint_path==''
-        #     if conf.args.dataset in ['imagenet'] and conf.args.method != 'Ours': # Baselines other than NOTE should use a pre-trained model.
-        #         pass
-        #     elif conf.args.dataset in ['imagenet'] and conf.args.method == 'Ours' and not conf.args.iabn: #if ablation on without iabn, load pretrained imagenet.
-        #         pass
-        #     else:
-        #         self.load_checkpoint(conf.args.load_checkpoint_path)
-
-
-        # if conf.args.iabn and conf.args.pretrain_wo_iabn:
-        #     iabn.convert_iabn(self.net)
+        self.net = model
 
 
         # Add normalization layers (for vision dataset), additional normalization layer in front of network
@@ -98,49 +67,13 @@ class DNN():
 
 
         ################## Init Criterions, Optimizers, Schedulers ###################
-        if conf.args.method == 'Src':
-            if conf.args.dataset in ['cifar10', 'cifar100', 'harth', 'reallifehar', 'extrasensory', 'svhn', 'cmnist',
-                                     'rmnist', 'mnist']:
-                self.optimizer = torch.optim.SGD(
-                    self.net.parameters(),
-                    conf.args.opt['learning_rate'],
-                    momentum=conf.args.opt['momentum'],
-                    weight_decay=conf.args.opt['weight_decay'],
-                    nesterov=True)
+        from transformers import get_scheduler
+        self.optimizer = optim.AdamW(self.net.parameters(), lr=conf.args.opt['learning_rate'],
+                                     weight_decay=conf.args.opt['weight_decay'])
+        self.scheduler = torch.optim.lr_scheduler.LinearLR(self.optimizer)
 
-                self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, T_max=conf.args.epoch * len(
-                    self.source_dataloader['train']))
-
-            elif conf.args.dataset in ['tinyimagenet', 'imagenet']:
-                self.optimizer = torch.optim.SGD(
-                    self.net.parameters(),
-                    conf.args.opt['learning_rate'],
-                    momentum=conf.args.opt['momentum'],
-                    weight_decay=conf.args.opt['weight_decay'],
-                    nesterov=True)
-
-            # The NLP datasets that we are interested in
-            elif conf.args.dataset in ['imdb', 'sst-2', 'finefood', 'tomatoes']:
-                self.optimizer = optim.Adam(self.net.parameters(), lr=conf.args.opt['learning_rate'],
-                                           weight_decay=conf.args.opt['weight_decay'], eps=conf.args.opt['eps'])
-
-            else:
-                self.optimizer = optim.Adam(self.net.parameters(), lr=conf.args.opt['learning_rate'],
-                                            weight_decay=conf.args.opt['weight_decay'])
-
-        else:
-            if conf.args.method == 'TENT' and conf.args.dataset == 'imagenet': # TENT use SGD for imagenet
-                self.optimizer = optim.SGD(self.net.parameters(), lr=conf.args.opt['learning_rate'],
-                                            weight_decay=conf.args.opt['weight_decay'])
-            elif 'prompt' in conf.args.method and conf.args.online == False:
-                self.optimizer = optim.Adam(self.net.parameters(), lr=conf.args.opt['prompt_learning_rate'],
-                                    weight_decay=conf.args.opt['weight_decay'])
-            else:
-                self.optimizer = optim.Adam(self.net.parameters(), lr=conf.args.opt['learning_rate'],
-                                    weight_decay=conf.args.opt['weight_decay'])
 
         self.class_criterion = nn.CrossEntropyLoss() # already contains softmax, do not include softmax in the layer
-        self.freeze_layers()  # this will call overriden method
 
 
         ################## Set Memory Management Techniques ###################
@@ -161,29 +94,6 @@ class DNN():
         self.occurred_class = [0 for i in range(conf.args.opt['num_class'])]
 
 
-        # add hooks to BN layers
-        # if conf.args.log_bn_stats:
-        #     num_bn_layers = 0
-        #     for layer in self.net.modules():
-        #         if isinstance(layer, torch.nn.BatchNorm1d):
-        #             num_bn_layers += 1
-        #     self.hook_logger = LogBNStats(self.write_path, num_bn_layers)
-        #     for layer in self.net.modules():
-        #         if isinstance(layer, torch.nn.BatchNorm1d):
-        #             print("This may batchnorms")
-        #             layer.register_forward_hook(self.hook_logger)
-
-
-    def freeze_bn(self): #TODO: what is this?
-        for m in self.net.modules():
-            if isinstance(m, nn.BatchNorm2d):
-                m.eval()
-
-    def freeze_layers(self):
-        if 'FT_FC' in conf.args.method:  # transfer learning
-            for param in self.feature_extractor.parameters():
-                param.requires_grad = False
-
     def target_data_processing(self):
 
         features = []
@@ -203,76 +113,17 @@ class DNN():
         features, cl_labels, do_labels = zip(*tmp)
         features, cl_labels, do_labels = list(features), list(cl_labels), list(do_labels)
 
-        num_class = conf.args.opt['num_class']
-
         result_feats = []
         result_cl_labels = []
         result_do_labels = []
 
-        # real distribution
-        if self.tgt_train_dist == 0:
-            num_samples = conf.args.nsample if conf.args.nsample < len(features) else len(features)
-            for _ in range(num_samples):
-                tgt_idx = 0
-                result_feats.append(features.pop(tgt_idx))
-                result_cl_labels.append(cl_labels.pop(tgt_idx))
-                result_do_labels.append(do_labels.pop(tgt_idx))
 
-        # random distribution
-        if self.tgt_train_dist == 1:
-            num_samples = conf.args.nsample if conf.args.nsample < len(features) else len(features)
-            for _ in range(num_samples):
-                tgt_idx = np.random.randint(len(features))
-                result_feats.append(features.pop(tgt_idx))
-                result_cl_labels.append(cl_labels.pop(tgt_idx))
-                result_do_labels.append(do_labels.pop(tgt_idx))
-
-        # dirichlet distribution
-        elif self.tgt_train_dist == 4:
-
-            dirichlet_numchunks = conf.args.opt['num_class']
-
-            # https://github.com/IBM/probabilistic-federated-neural-matching/blob/f44cf4281944fae46cdce1b8bc7cde3e7c44bd70/experiment.py
-            min_size = -1
-            N = len(features)
-            min_size_thresh = 10 #if conf.args.dataset in ['tinyimagenet'] else 10
-            while min_size < min_size_thresh:  # prevent any chunk having too less data
-                idx_batch = [[] for _ in range(dirichlet_numchunks)]
-                idx_batch_cls = [[] for _ in range(dirichlet_numchunks)] # contains data per each class
-                for k in range(num_class):
-                    cl_labels_np = torch.Tensor(cl_labels).numpy()
-                    idx_k = np.where(cl_labels_np == k)[0]
-                    np.random.shuffle(idx_k)
-                    proportions = np.random.dirichlet(
-                        np.repeat(conf.args.dirichlet_beta, dirichlet_numchunks))
-
-                    # balance
-                    proportions = np.array([p * (len(idx_j) < N / dirichlet_numchunks) for p, idx_j in
-                                            zip(proportions, idx_batch)])
-                    proportions = proportions / proportions.sum()
-                    proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
-                    idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
-                    min_size = min([len(idx_j) for idx_j in idx_batch])
-
-                    # store class-wise data
-                    for idx_j, idx in zip(idx_batch_cls, np.split(idx_k, proportions)):
-                        idx_j.append(idx)
-
-            sequence_stats = []
-
-            # create temporally correlated toy dataset by shuffling classes
-            for chunk in idx_batch_cls:
-                cls_seq = list(range(num_class))
-                np.random.shuffle(cls_seq)
-                for cls in cls_seq:
-                    idx = chunk[cls]
-                    result_feats.extend([features[i] for i in idx])
-                    result_cl_labels.extend([cl_labels[i] for i in idx])
-                    result_do_labels.extend([do_labels[i] for i in idx])
-                    sequence_stats.extend(list(np.repeat(cls, len(idx))))
-
-            # log statistics
-            # log_dirichlet_data_stats(dirichlet_numchunks, cl_labels_np, idx_batch, idx_batch_cls)
+        num_samples = conf.args.nsample if conf.args.nsample < len(features) else len(features)
+        for _ in range(num_samples):
+            tgt_idx = np.random.randint(len(features))
+            result_feats.append(features.pop(tgt_idx))
+            result_cl_labels.append(cl_labels.pop(tgt_idx))
+            result_do_labels.append(do_labels.pop(tgt_idx))
 
             # trim data if num_sample is smaller than the original data size
             num_samples = conf.args.nsample if conf.args.nsample < len(result_feats) else len(result_feats)
@@ -280,8 +131,7 @@ class DNN():
             result_cl_labels = result_cl_labels[:num_samples]
             result_do_labels = result_do_labels[:num_samples]
 
-        # TODO: manage num_target_train_set..
-        # if conf.args.online:
+
         remainder = len(result_feats) % conf.args.update_every_x  # drop leftover samples
         if remainder == 0:
             pass
@@ -349,52 +199,40 @@ class DNN():
         # self.net.load_state_dict(checkpoint, strict=True)
         self.net.to(device)
 
-    def get_loss_and_confusion_matrix(self, classifier, criterion, data, label):
-        preds_of_data = classifier(data)
+    # loading from source, which does not have any softempbedding layer
+    def load_checkpoint_naive(self, checkpoint_path=''):
+        from models.BaseTransformer import BaseNet
+        if checkpoint_path:
+            checkpoint_dict = torch.load(checkpoint_path, map_location=f'cuda:{conf.args.gpu_idx}')
+            try:
+                checkpoint = checkpoint_dict['state_dict']
+            except KeyError:
+                checkpoint = checkpoint_dict
 
-        labels = [i for i in range(len(conf.args.opt['classes']))]
+            temp_net = BaseNet(self.net.model_name)
+            temp_net.load_state_dict(checkpoint, strict=True)
+        else:
+            temp_net = BaseNet(self.net.model_name)
 
-        loss_of_data = criterion(preds_of_data, label)
-        pred_label = preds_of_data.max(1, keepdim=False)[1]
-        cm = confusion_matrix(label.cpu(), pred_label.cpu(), labels=labels)
-        return loss_of_data, cm, preds_of_data
-
-    def get_loss_cm_error(self, classifier, criterion, data, label):
-        preds_of_data = classifier(data)
-        labels = [i for i in range(len(conf.args.opt['classes']))]
-
-        loss_of_data = criterion(preds_of_data, label)
-        pred_label = preds_of_data.max(1, keepdim=False)[1]
-        assert (len(label) == len(pred_label))
-        cm = confusion_matrix(label.cpu(), pred_label.cpu(), labels=labels)
-        errors = [0 if label[i] == pred_label[i] else 1 for i in range(len(label))]
-        return loss_of_data, cm, errors
-
-    def log_loss_results(self, condition, epoch, loss_avg):
-
-        # print loss
-        # print('{:s}: [epoch : {:d}]\tLoss: {:.6f} \t'.format(
-        #     condition, epoch, loss_avg
-        # ))
-
-        # self.tensorboard.log_scalar(condition + '/loss_sum', loss_avg, epoch)
-
-
-        return loss_avg
-
-    def log_accuracy_results(self, condition, suffix, epoch, cm_class):
-
-        assert (condition in ['valid', 'test'])
-        # assert (suffix in ['labeled', 'unlabeled', 'test'])
-
-        class_accuracy = 100.0 * np.sum(np.diagonal(cm_class)) / np.sum(cm_class)
-        # self.tensorboard.log_scalar(condition + '/' + 'accuracy_class_' + suffix, class_accuracy, epoch)
-
-        print('[epoch:{:d}] {:s} {:s} class acc: {:.3f}'.format(epoch, condition, suffix, class_accuracy))
-        # self.tensorboard.log_confusion_matrix(condition + '_accuracy_class_' + suffix, cm_class,
-        #                                       conf.args.opt['classes'], epoch)
-
-        return class_accuracy
+        if conf.args.method == 'ttaprompttune':
+            from models.emebdding_layer.TTAEmbedding import TTAEmbedding
+            embedding = TTAEmbedding(
+                temp_net.get_input_embeddings(),
+                n_tokens=self.n_tokens,
+                initialize_from_vocab=self.initialize_from_vocab,
+            )
+        elif conf.args.method == 'dattaprompttune':
+            from models.emebdding_layer.DATTAEmbedding import DATTAEmbedding
+            embedding = DATTAEmbedding(
+                temp_net.get_input_embeddings(),
+                n_tokens=self.n_tokens,
+                initialize_from_vocab=self.initialize_from_vocab,
+            )
+        else:
+            raise NotImplementedError
+        temp_net.set_input_embeddings(embedding)
+        self.net.load_state_dict(temp_net.state_dict(), strict=True)
+        self.net.to(device)
 
     def train(self, epoch):
         """
@@ -404,12 +242,12 @@ class DNN():
         # setup models
 
         self.net.train()
-        self.net.set_backbone_gradients_false()
+        # if conf.args.parallel:
+        #     self.net.module.set_backbone_gradient(conf.args.set_backbone_true)
+        # else:
+        #     self.net.set_backbone_gradient(conf.args.set_backbone_true)
         class_loss_sum = 0.0
         total_iter = 0
-
-        from utils.util_functions import print_summary
-        print_summary(self.net)
 
         if conf.args.method in ['Src', 'Src_Tgt']:
             num_iter = len(self.source_dataloader['train'])
@@ -435,18 +273,17 @@ class DNN():
 
                 # backpropagation of loss
                 class_loss.backward()
-
-                # take gradient step
                 self.optimizer.step()
 
                 # take scheduler step
-                if conf.args.dataset in ['cifar10', 'cifar100', 'harth', 'reallifehar', 'extrasensory']:
-                    self.scheduler.step()
+                self.scheduler.step()
+        # self.log_current_test_acc()
 
         ######################## LOGGING #######################
 
+        print(f'class_loss_sum is : {class_loss_sum}')
+
         avg_loss = class_loss_sum / total_iter
-        self.log_loss_results('train', epoch=epoch, loss_avg=avg_loss)
         return avg_loss
 
     def train_online(self, current_num_sample):
@@ -455,110 +292,6 @@ class DNN():
         Train the model
         """
         raise NotImplementedError  # training Src with online is currently not enabled.
-
-        # TRAINED = 0
-        # SKIPPED = 1
-        # FINISHED = 2
-        #
-        # if not hasattr(self, 'previous_train_loss'):
-        #     self.previous_train_loss = 0
-        #
-        # if current_num_sample > len(self.target_train_set[0]):
-        #     return FINISHED
-        #
-        # # Add a sample
-        # feats, cls, dls = self.target_train_set
-        # current_sample = feats[current_num_sample - 1], cls[current_num_sample - 1], dls[current_num_sample - 1]
-        # self.mem.add_instance(current_sample)
-        # self.evaluation_online(current_num_sample, '', [[current_sample[0]], [current_sample[1]], [current_sample[2]]])
-        #
-        # if current_num_sample % conf.args.update_every_x != 0:  # train only when enough samples are collected
-        #     if not (current_num_sample == len(self.target_train_set[
-        #                                           0]) and conf.args.update_every_x >= current_num_sample):  # update with entire data
-        #
-        #         self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=self.previous_train_loss)
-        #         return SKIPPED
-        #
-        # # setup models
-        #
-        # self.net.train()
-        #
-        # class_loss_sum = 0.0
-        # total_iter = 0
-        #
-        # feats, cls, dls = self.mem.get_memory()
-        # feats, cls, dls = torch.stack(feats), torch.stack(cls), torch.stack(dls)
-        # print(len(feats))
-        #
-        # if len(feats) == 1:  # avoid BN error
-        #     self.feature_extractor.eval()
-        #     self.class_classifier.eval()
-        #
-        # dataset = torch.utils.data.TensorDataset(feats, cls, dls)
-        # data_loader = DataLoader(dataset, batch_size=conf.args.opt['batch_size'],
-        #                          shuffle=True,
-        #                          drop_last=False, pin_memory=False)
-        # num_iter = len(data_loader)
-        #
-        # for e in range(conf.args.epoch):
-        #
-        #     total_iter += num_iter
-        #
-        #     for batch_idx, labeled_data in enumerate(data_loader):
-        #         feats, cls, dls = labeled_data
-        #         feats, cls = feats.to(device), cls.to(device)
-        #
-        #         feature_of_labeled_data = self.feature_extractor(feats)
-        #         # compute the class loss of feature_of_labeled_data
-        #         class_loss, _, _ = self.get_loss_and_confusion_matrix(self.class_classifier,
-        #                                                               self.class_criterion,
-        #                                                               feature_of_labeled_data,
-        #                                                               cls)
-        #
-        #         class_loss_sum += float(class_loss * feats.size(0))
-        #         self.optimizer.zero_grad()
-        #         class_loss.backward()
-        #         self.optimizer.step()
-        #
-        # self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=class_loss_sum / total_iter)
-        # avg_loss = class_loss_sum / total_iter
-        # self.previous_train_loss = avg_loss
-        #
-        # return TRAINED
-
-    def logger(self, name, value, epoch, condition):
-
-        if not hasattr(self, name + '_log'):
-            exec(f'self.{name}_log = []')
-            exec(f'self.{name}_file = open(self.write_path + name + ".txt", "w")')
-
-        exec(f'self.{name}_log.append(value)')
-
-        if isinstance(value, torch.Tensor):
-            value = value.item()
-        write_string = f'{epoch}\t{value}\n'
-        exec(f'self.{name}_file.write(write_string)')
-        # self.tensorboard.log_scalar(condition + '/' + name, value, epoch)
-
-    def draw_tsne(self, epoch):
-        feats, cls, _ = self.target_train_set
-        feats, cls = feats.to(device), cls.to(device)
-        # compute the feature
-        feature_of_labeled_data = self.feature_extractor(feats)
-
-        tsne = TSNE(n_components=2, verbose=1, random_state=conf.args.seed)
-        _, cls, _ = self.target_train_set
-        z = tsne.fit_transform(feature_of_labeled_data.cpu().detach().numpy())
-        df = pd.DataFrame()
-        df["y"] = cls
-        df["d1"] = z[:, 0]
-        df["d2"] = z[:, 1]
-
-        sns.scatterplot(x="d1", y="d2", hue=df.y.tolist(),
-                        palette=sns.color_palette("hls", conf.args.opt['num_class']),
-                        data=df).set(title=f'Epoch:{epoch}')
-
-        # self.tensorboard.log_tsne("Test" + '_tsne', global_step=epoch)
 
     def evaluation(self, epoch, condition):
 
@@ -589,11 +322,6 @@ class DNN():
         # ))
         class_accuracy = 100.0 * np.sum(np.diagonal(class_cm_test_data)) / np.sum(class_cm_test_data)
         print('[epoch:{:d}] {:s} {:s} class acc: {:.3f}'.format(epoch, condition, 'test', class_accuracy))
-        # self.tensorboard.log_confusion_matrix(condition + '_accuracy_class_' + 'test', class_cm_test_data,
-        #                                       conf.args.opt['classes'], epoch)
-
-        self.logger('accuracy', class_accuracy, epoch, condition)
-        self.logger('loss', class_loss_of_test_data, epoch, condition)
 
         return class_accuracy, class_loss_of_test_data, class_cm_test_data
 
@@ -601,8 +329,6 @@ class DNN():
         #########################################################################################################
         ##############################----- evaluation with target data -----####################################
         #########################################################################################################
-        # evaluation is done as list
-
         self.net.eval()
 
         with torch.no_grad():
@@ -613,46 +339,24 @@ class DNN():
             feats, cls, dls = (torch.stack(features), torch.stack(cl_labels), torch.stack(do_labels))
             feats, cls, dls = feats.to(device), cls.to(device), dls.to(device)
 
-            if conf.args.method == 'T3A':
-                z = self.featurizer(feats)
 
-                if conf.args.model == 'wideresnet28-10':  # rest operations not in the model.modules()
-                    z = torch.nn.functional.avg_pool2d(z, 8)
-                    z = z.view(-1, 640)
+            dataset = torch.utils.data.TensorDataset(feats, cls)
+            data_loader = DataLoader(dataset, batch_size=conf.args.opt['batch_size'],
+                                     shuffle=True,
+                                     drop_last=False, pin_memory=False)
+            pred_list = []
+            for batch_idx, (feats, cls,) in enumerate(data_loader):
+                feats = feats.to(device)
+                cls = cls.to(device)
 
-                y_pred = self.batch_evaluation(z)
+                # prediction from network
+                preds_of_data = self.net(feats)
+                pred_list.append(preds_of_data)
 
-            elif conf.args.method == 'LAME':
-                y_pred = self.batch_evaluation(feats).argmax(-1)
+            y_pred = torch.cat(pred_list)
+            y_pred = y_pred.max(1, keepdim=False)[1]
 
-            elif conf.args.method == 'COTTA':
-                x = feats
-                anchor_prob = torch.nn.functional.softmax(self.net_anchor(x), dim=1).max(1)[0]
-                standard_ema = self.net_ema(x)
-
-                N = 32
-                outputs_emas = []
-
-                # Threshold choice discussed in supplementary
-                # enable data augmentation for vision datasets
-                if anchor_prob.mean(0) < self.ap:
-                    for i in range(N):
-                        outputs_ = self.net_ema(self.transform(x)).detach()
-                        outputs_emas.append(outputs_)
-                    outputs_ema = torch.stack(outputs_emas).mean(0)
-                else:
-                    outputs_ema = standard_ema
-                y_pred=outputs_ema
-                y_pred = y_pred.max(1, keepdim=False)[1]
-
-            else:
-
-                y_pred = self.net(feats)
-                y_pred = y_pred.max(1, keepdim=False)[1]
-
-            ###################### SAVE RESULT
-            # get lists from json
-
+            # SAVE RESULTS
             try:
                 true_cls_list = self.json['gt']
                 pred_cls_list = self.json['pred']
@@ -720,6 +424,27 @@ class DNN():
                 'distance_l2': [],
             }
 
+    def log_current_test_acc(self):
+        dataset = torch.utils.data.TensorDataset(self.target_train_set[0], self.target_train_set[1])
+        data_loader = DataLoader(dataset, batch_size=conf.args.opt['batch_size'],
+                                 shuffle=True,
+                                 drop_last=False, pin_memory=False)
+
+        pred_list = []
+        for batch_idx, (feats, cls,) in enumerate(data_loader):
+            feats = feats.to(device)
+            cls = cls.to(device)
+
+            # prediction from network
+            preds_of_data = self.net(feats)
+            pred_list.append(preds_of_data)
+
+        y_pred = torch.cat(pred_list)
+        y_pred = y_pred.max(1, keepdim=False)[1]
+        acc = sum(1 for gt, pred in zip(y_pred, self.target_train_set[1]) if gt == pred) / float(
+                len(y_pred)) * 100
+        print(f'Current epoch test acc is: {acc}')
+
 
     def validation(self, epoch):
         """
@@ -733,23 +458,22 @@ class DNN():
         """
         Test the performance of the model
         """
-
-        #### for test data
         class_accuracy_of_test_data, loss, cm_class = self.evaluation(epoch, 'test')
 
         return class_accuracy_of_test_data, loss
 
     def set_gradients(self, type='all'):
         assert "prompttune" in conf.args.method
-        from utils.util_functions import is_instance_of_any
+        from utils.util_functions import is_instance_of_any, set_gradients
 
         if type == 'all':
-            for params in self.net.parameters():
-                params.requires_grad = True
-            for params in self.net.backbone.parameters():
-                params.requires_grad = False
-            for params in self.net.backbone.get_input_embeddings().parameters():
-                params.requires_grad = True
+            set_gradients(parameter=self.net.parameters(), boolean=True)
+            if conf.args.parallel:
+                set_gradients(parameter=self.net.module.backbone.parameters(), boolean=False)
+                set_gradients(parameter=self.net.module.backbone.get_input_embeddings().parameters(), boolean=True)
+            else:
+                set_gradients(parameter=self.net.backbone.parameters(), boolean=False)
+                set_gradients(parameter=self.net.backbone.get_input_embeddings().parameters(), boolean=True)
 
             for m in self.net.modules():
                 if is_instance_of_any(m, [nn.BatchNorm1d, nn.BatchNorm2d]):
@@ -785,19 +509,39 @@ class DNN():
                     m.weight.requires_grad_(True)
                     m.bias.requires_grad_(True)
                 else:
-                    for params in m.parameters():
-                        params.requires_grad = False
+                    set_gradients(parameter=m.parameters(), boolean=False)
 
         elif type == 'embed':
-            for params in self.net.parameters():
-                params.requires_grad = False
-            for params in self.net.backbone.parameters():
-                params.requires_grad = False
-            for params in self.net.backbone.get_input_embeddings().parameters():
-                params.requires_grad = True
 
-        elif type == 'none':
-            for params in self.net.parameters():
-                params.requires_grad = False
+            set_gradients(parameter=self.net.parameters(), boolean=False)
+            if conf.args.parallel:
+                set_gradients(parameter=self.net.module.backbone.parameters(), boolean=False)
+                set_gradients(parameter=self.net.module.backbone.get_input_embeddings().parameters(), boolean=True)
+            else:
+                set_gradients(parameter=self.net.backbone.parameters(), boolean=False)
+                set_gradients(parameter=self.net.backbone.get_input_embeddings().parameters(), boolean=True)
+
+
+        elif type == 'all_ln_bn':
+            set_gradients(parameter=self.net.parameters(), boolean=True)
+            if conf.args.parallel:
+                set_gradients(parameter=self.net.module.backbone.parameters(), boolean=False)
+                set_gradients(parameter=self.net.module.backbone.get_input_embeddings().parameters(), boolean=True)
+            else:
+                set_gradients(parameter=self.net.backbone.parameters(), boolean=False)
+                set_gradients(parameter=self.net.backbone.get_input_embeddings().parameters(), boolean=True)
+
+            for m in self.net.modules():
+                if is_instance_of_any(m, [nn.BatchNorm1d, nn.BatchNorm2d, nn.LayerNorm]):
+                    if conf.args.use_learned_stats:
+                        m.track_running_stats = True
+                        m.momentum = conf.args.bn_momentum
+                    else:
+                        m.track_running_stats = False
+                        m.running_mean = None
+                        m.running_var = None
+
+                    m.weight.requires_grad_(True)
+                    m.bias.requires_grad_(True)
         else:
             raise NotImplementedError

@@ -3,7 +3,7 @@ from .dnn import DNN
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import models
-from models.emebdding_layer import TTAEmbedding
+from models.emebdding_layer import DATTAEmbedding
 from utils.loss_functions import *
 from utils.util_functions import print_summary
 from transformers import BertTokenizer
@@ -15,27 +15,22 @@ class TTA_DomainAware_Prompt_tuning(DNN):
     def __init__(self, *args, **kwargs):
         super(TTA_DomainAware_Prompt_tuning, self).__init__(*args, **kwargs)
 
-        n_tokens = 20
-        initialize_from_vocab = True,
+        n_tokens = conf.args.n_tokens
+        initialize_from_vocab = not conf.args.no_init_from_vocab,
         self.n_tokens = n_tokens
         self.initialize_from_vocab = initialize_from_vocab
-        # print_summary(self.net) # for debugging purpose
 
         if conf.args.parallel:
             input_embeddings = self.net.module.get_input_embeddings()
         else:
             input_embeddings = self.net.get_input_embeddings()
 
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        tokens = tokenizer.encode("movie reviews", add_special_tokens=True)
-        tokens = torch.tensor(tokens).long()
-        print(tokens)
+
         ## only can be used with huggingface transformer models
-        self.tta_embedding = TTAEmbedding.TTAEmbedding(
+        self.tta_embedding = DATTAEmbedding.DATTAEmbedding(
             input_embeddings,
             n_tokens=self.n_tokens,
             initialize_from_vocab = self.initialize_from_vocab,
-            model_config = self.net.get_config()
         )
 
         # setting the previous input_embeddings to current embedding
@@ -54,6 +49,8 @@ class TTA_DomainAware_Prompt_tuning(DNN):
         # initialize requires_grad of model
         self.set_gradients(conf.args.adapt_type)
         print_summary(self.net)
+
+
     # for training source modelx
     def train(self, current_num_sample):
         """
@@ -94,6 +91,8 @@ class TTA_DomainAware_Prompt_tuning(DNN):
             # take gradient step
             self.optimizer.step()
 
+            self.scheduler.step()
+
             # take scheduler step
             if conf.args.dataset in ['cifar10', 'cifar100', 'harth', 'reallifehar', 'extrasensory']:
                 self.scheduler.step()
@@ -121,6 +120,7 @@ class TTA_DomainAware_Prompt_tuning(DNN):
         current_sample = feats[current_num_sample - 1], cls[current_num_sample - 1], dls[current_num_sample - 1]
         self.mem.add_instance(current_sample)
 
+
         if conf.args.use_learned_stats: #batch-free inference
             self.evaluation_online(current_num_sample, '', [[current_sample[0]], [current_sample[1]], [current_sample[2]]])
 
@@ -130,7 +130,6 @@ class TTA_DomainAware_Prompt_tuning(DNN):
             if not (current_num_sample == len(self.target_train_set[
                                                   0]) and conf.args.update_every_x >= current_num_sample):  # update with entire data
 
-                self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=self.previous_train_loss)
                 return SKIPPED
 
         if not conf.args.use_learned_stats: #batch-based inference
@@ -138,11 +137,6 @@ class TTA_DomainAware_Prompt_tuning(DNN):
 
         # setup models
         self.net.train()
-
-        # self.set_gradients(conf.args.adapt_type)
-
-        from utils.util_functions import print_summary
-        # print_summary(self.net)
 
         if len(feats) == 1:  # avoid BN error
             self.net.eval()
@@ -170,39 +164,14 @@ class TTA_DomainAware_Prompt_tuning(DNN):
                 else:
                     loss = entropy_loss(preds_of_data)
 
-
                 # backpropagate the loss
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
 
-        self.log_loss_results('train_online', epoch=current_num_sample, loss_avg=0)
+                self.scheduler.step()
 
         return TRAINED
-
-
-    # loading from source, which does not have any softempbedding layer
-    def load_checkpoint_naive(self, checkpoint_path=''):
-        checkpoint_dict = torch.load(checkpoint_path, map_location=f'cuda:{conf.args.gpu_idx}')
-        try:
-            checkpoint = checkpoint_dict['state_dict']
-        except KeyError:
-            checkpoint = checkpoint_dict
-
-        from models.BaseTransformer import BaseNet
-        temp_net = BaseNet(self.net.model_name)
-        temp_net.load_state_dict(checkpoint, strict=True)
-
-        from models.emebdding_layer.TTAEmbedding import TTAEmbedding
-        ttaembedding = TTAEmbedding(
-            temp_net.get_input_embeddings(),
-            n_tokens=self.n_tokens,
-            initialize_from_vocab=self.initialize_from_vocab,
-            model_config=temp_net.get_config()
-        )
-        temp_net.set_input_embeddings(ttaembedding)
-        self.net.load_state_dict(temp_net.state_dict(), strict=True)
-        self.net.to(device)
 
 
 
