@@ -13,6 +13,7 @@ from texttable import Texttable
 args = None
 
 method_format = {
+    'Src': 'Source',
     'ln_tent' : 'TENT-LN',
     'dattaprompttune' : 'TeTra'
 }
@@ -222,13 +223,17 @@ def get_accuracy_from_dict(
         lr: str,
         all_dict: dict
 ):
-    target_str = f'model_{model}_lr{lr}_memsize{memsize}_uex{memsize}_from_{dataset2}_to_{dataset1}'
-
+    if method != 'Src':
+        target_str = f'model_{model}_lr{lr}_memsize{memsize}_uex{memsize}_from_{dataset2}_to_{dataset1}'
+    else:
+        target_str = f'model_{model}_from_{dataset2}_to_{dataset1}'
+    print(target_str)
     target = None
     for key in all_dict.keys():
         if target_str in key and method in key:
             target = (key, all_dict[key])
             break
+    print(all_dict)
     assert target != None
     return target
 
@@ -248,7 +253,7 @@ def draw_single_instance(
                 first_col.append(f'{dataset2}\nto\n{dataset1}')
     table.add_row(first_col)
 
-    for method in ['ln_tent', 'dattaprompttune']:
+    for method in ['Src','ln_tent', 'dattaprompttune']:
         single_row = [method_format[method]]
         for dataset1 in datasets:
             for dataset2 in datasets:

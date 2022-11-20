@@ -1,5 +1,5 @@
 LOG_PREFIX="221120_results" ## after normalization
-METHODS="Src dattaprompttune ln_tent"
+METHODS="Src"
 
 #INITIAL parameters for running model
 GPUS=(1 2 3 4 5 6 7)
