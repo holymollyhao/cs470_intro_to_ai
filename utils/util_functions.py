@@ -124,4 +124,4 @@ def get_max_position_embeddings():
     if 'bert' in conf.args.model:
         return 512, 512
     elif 'bart' in conf.args.model:
-        return 1024, 1024
+        return 512, 1024

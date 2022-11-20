@@ -10,7 +10,7 @@ from utils.util_functions import get_max_position_embeddings
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
 
 domain_dict = {
-    "sst-2": "Do sentiment analysis on the following sentence ",
+    "sst-2": "This is a sentence from standford sentiment analysis datastet:  ",
     "imdb": "The is a movie review from imdb",
     "tomatoes": "This is a movie review from rottentomatoes",
     "finefood": "The follwing sentence is a food review:",

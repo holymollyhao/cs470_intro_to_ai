@@ -1,38 +1,77 @@
-LOG_PREFIX="221116_baseline_ablation_tests" ## after normalization
-METHODS="ln_tent"
-METHOD="ln_tent"
+LOG_PREFIX="221119_source" ## after normalization
 
 #INITIAL parameters for running model
 GPUS=(0 1 2 3 4 5 6 7)
 NUM_GPUS=${#GPUS[@]}
 SEED=0
 i=0
+
+wait_n() {
+  #limit the max number of jobs as NUM_MAX_JOB and wait
+  background=($(jobs -p))
+  local default_num_jobs=5 #12
+  local num_max_jobs=5
+  echo $num_max_jobs
+  if ((${#background[@]} >= num_max_jobs)); then
+    wait -n
+  fi
+}
+
 DATASET="finefood" #this is fixed for source training
-#ADAPT_TYPE="all bn ln bnln emb"
-LRs="0.3 0.2 0.1 0.01 0.001"
-for lr in $LRs; do
-  MODEL="bert"
-  SRC="test"
-  TGT="train"
-  uex=16
-  memsize=16
-  python main.py  --gpu_idx ${GPUS[i % ${NUM_GPUS}]} \
-                  --dataset $DATASET \
-                  --method ${METHOD} \
-                  --src $SRC \
-                  --tgt $TGT \
-                  --online \
-                  --epoch 1 \
-                  --lr ${lr} \
-                  --update_every_x ${uex} \
-                  --memory_size ${memsize} \
-                  --load_checkpoint_path /home/twkim/git/tetra/log/sst-2/Src/tgt_test/221114_initial_gen_0/cp/cp_last.pth.tar \
-                  --model $MODEL \
-                  --seed $SEED \
-                  --log_prefix ${LOG_PREFIX}_${SEED}_lr${lr}_memsize${memsize}_uex${uex}_type \
-                2>&1 | tee raw_logs/${DATASET}_${LOG_PREFIX}_${SEED}_job${i}.txt &
-  i=$((i + 1))
-done
+
+train_bert_based(){
+  MODEL="bert distilbert"
+  DATASET="finefood imdb sst-2"
+  epoch="1"
+  lr="0.00002"
+  method="Src"
+  for dataset in $DATASET; do
+    for model in $MODEL; do
+      python main.py  --gpu_idx ${GPUS[i % ${NUM_GPUS}]} \
+                      --dataset $dataset \
+                      --method ${method} \
+                      --src train \
+                      --tgt test \
+                      --epoch $epoch \
+                      --lr ${lr} \
+                      --model $model \
+                      --seed $SEED \
+                      --log_prefix ${LOG_PREFIX}_${SEED}_epoch${epoch}_lr${lr} \
+                    2>&1 | tee raw_logs/${DATASET}_${LOG_PREFIX}_${SEED}_job${i}.txt &
+      wait_n
+      i=$((i + 1))
+    done
+  done
+
+}
+train_bart(){
+  model="bart"
+  DATASET="finefood imdb sst-2"
+  epoch="1 5"
+  lr="0.00001"
+  method="Src"
+  for epoch in $EPOCH; do
+    for dataset in $DATASET; do
+      python main.py  --parallel \
+                      --dataset $dataset \
+                      --method ${method} \
+                      --src train \
+                      --tgt test \
+                      --epoch $epoch \
+                      --lr ${lr} \
+                      --model $model \
+                      --seed $SEED \
+                      --log_prefix ${LOG_PREFIX}_${SEED}_epoch${epoch}_lr${lr}_model${model} \
+                    2>&1 | tee raw_logs/${DATASET}_${LOG_PREFIX}_${SEED}_job${i}.txt &
+      wait
+    done
+  done
+}
+
+train_bart
+
+
+
 
 
 #main.py
@@ -49,4 +88,5 @@ done
 #--memory_size 16
 #--load_checkpoint_path /home/twkim/git/tetra/log/sst-2/Src/tgt_test/221114_initial_gen_0/cp/cp_last.pth.tar
 #--log_prefix debug
-#--adapt_type all
+
+}#--adapt_type all

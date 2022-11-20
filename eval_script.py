@@ -7,8 +7,53 @@ import multiprocessing as mp
 from tqdm import tqdm
 import json
 import conf
+from texttable import Texttable
+
 
 args = None
+
+method_format = {
+    'ln_tent' : 'TENT-LN',
+    'dattaprompttune' : 'TeTra'
+}
+best_config ={
+    'finefood':{
+        'distilbert':{
+            'uex': '16',
+            'memsize': '16',
+            'lr': '0.01'
+        },
+        'bert':{
+            'uex': '32',
+            'memsize': '32',
+            'lr': '0.01'
+        },
+    },
+    'imdb':{ #재웅
+        'distilbert':{
+            'uex': '16',
+            'memsize': '16',
+            'lr': '0.00001'
+        },
+        'bert':{
+            'uex': '32',
+            'memsize': '32',
+            'lr': '0.00001'
+        },
+    },
+    'sst-2':{
+        'distilbert':{
+            'uex': '128',
+            'memsize': '128',
+            'lr': '0.00001'
+        },
+        'bert':{
+            'uex': '128',
+            'memsize': '128',
+            'lr': '0.00001'
+        },
+    }
+}
 
 def load_epoch(file_path):
     found = False
@@ -154,46 +199,8 @@ def main(args):
 
     for (path, dir, files) in os.walk(root):
         if pattern_of_path.match(path):
-            if not path.endswith('/cp'):  # ignore cp/ dir
+            if not path.endswith('/cp'):
                 path_list.append(path)
-    ########### Main Experiments #############
-    # LOG_SUFFIX="220511_src" ## main
-    # LOG_SUFFIX="220511_baselines" ## main
-    # LOG_SUFFIX="220511_ablation" ## main
-
-    ################### Hyper parameters #################
-    is_iabn = False
-    if 'iabn' in args.regex:
-        is_iabn = True
-
-    if 'harth' in args.directory:
-        opt = conf.HARTHOpt
-    elif 'reallifehar' in args.directory:
-        opt = conf.RealLifeHAROpt
-    elif 'extrasensory' in args.directory:
-        opt = conf.ExtraSensoryOpt
-    elif 'kitti_sot' in args.directory:
-        opt = conf.KITTI_SOT_Opt
-    elif 'cifar100' in args.directory:
-        opt = conf.CIFAR100Opt
-    elif 'cifar10' in args.directory:
-        opt = conf.CIFAR10Opt
-    elif 'pacs' in args.directory:
-        opt = conf.PACSOpt
-    elif 'svhn' in args.directory:
-        opt = conf.SVHNOpt
-    elif 'imagenet' in args.directory:
-        opt = conf.ImageNetOpt
-    elif 'finefood' in args.directory:
-        opt = conf.FineFoodOpt
-    elif 'sst-2' in args.directory:
-        opt = conf.SST2Opt
-    elif 'imdb' in args.directory:
-        opt = conf.IMDBOpt
-    elif 'tomatoes' in args.directory:
-        opt = conf.TomatoesOpt
-    else:
-        raise NotImplementedError
 
     pool = mp.Pool()
     all_dict = {}
@@ -202,28 +209,64 @@ def main(args):
         for d in ret:
             all_dict.update(d)
 
-    # print(f'Result from {len(path_list)} paths:')
-    # print(sorted(all_dict.items()))
-    avg = 0
+    for model in ['bert', 'distilbert']:
+        draw_single_instance(model, all_dict)
+        print('\n')
 
-    if args.per_domain:
-        dict_list_per_domain = print_per_domain(all_dict, opt, is_iabn)
-        format_print_per_domain(dict_list_per_domain, opt)
-        # for dict_list in dict_list_per_domain:
-        #     avg = 0
-        #     for (k, v) in dict_list:
-        #         avg += v
-        #         print(k, v)
-        #     # print(f'avg_acc:\t{avg / len(dict_list)}')
-    else:
-        for k, v in sorted(all_dict.items()):
-            avg += v
-            print(k, v)
+def get_accuracy_from_dict(
+        method: str,
+        model: str,
+        memsize: str,
+        dataset1: str,
+        dataset2: str,
+        lr: str,
+        all_dict: dict
+):
+    target_str = f'model_{model}_lr{lr}_memsize{memsize}_uex{memsize}_from_{dataset2}_to_{dataset1}'
 
-        # for path in path_list:
-        #     print(path)
+    target = None
+    for key in all_dict.keys():
+        if target_str in key and method in key:
+            target = (key, all_dict[key])
+            break
+    assert target != None
+    return target
 
-        print(f'avg_acc:\t{avg / len(all_dict.keys())}')
+def draw_single_instance(
+        model: str,
+        all_dict: dict,
+    ):
+
+    datasets = sorted(list(best_config.keys()))
+    table = Texttable()
+    table.set_cols_align(['l', 'c', 'c', 'c', 'c', 'c', 'c'])
+
+    first_col = [f'Method\nwith\n{model.upper()}']
+    for dataset1 in datasets:
+        for dataset2 in datasets:
+            if dataset1 != dataset2:
+                first_col.append(f'{dataset2}\nto\n{dataset1}')
+    table.add_row(first_col)
+
+    for method in ['ln_tent', 'dattaprompttune']:
+        single_row = [method_format[method]]
+        for dataset1 in datasets:
+            for dataset2 in datasets:
+                if dataset1 != dataset2:
+                    single_acc = get_accuracy_from_dict(
+                        method=method,
+                        model=model,
+                        memsize=best_config[dataset1][model]['uex'],
+                        dataset1=dataset1,
+                        dataset2=dataset2,
+                        lr=best_config[dataset1][model]['lr'],
+                        all_dict= all_dict
+                    )[1]
+                    single_row.append(
+                        single_acc
+                    )
+        table.add_row(single_row)
+    print(table.draw())
 
 
 def parse_arguments(argv):
