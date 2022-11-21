@@ -22,10 +22,10 @@ wait_n() {
 N_TOKENS=30
 EPOCH=1
 DATASETS="finefood imdb sst-2"
-LR="0.00001"
+LR="0.01 0.00001"
 METHODS="Src"
-UEX="16"
-MODELS="bert distilbert"
+UEX="16 32 128"
+MODELS="bert distilbert bart"
 for model in $MODELS; do
   for dataset1 in $DATASETS; do
     for dataset2 in $DATASETS; do
@@ -33,10 +33,11 @@ for model in $MODELS; do
         for method in $METHODS; do
           for uex in $UEX; do
             if [ "${model}" = "distilbert" ]; then
-              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/221119_source_backbone_true_0_epoch1_distilbert/cp/cp_last.pth.tar
+              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/221120_source_0_epoch1_lr0.00002_modeldistilbert/cp/cp_last.pth.tar
             elif [ "${model}" = "bert" ]; then
-#              /home/twkim/git/tetra/log/finefood/Src/tgt_test/221119_source_backbone_true_0_epoch1/cp
-              load_checkpoint_path=log/${dataset2}/Src/tgt_test/221119_source_backbone_true_0_epoch1/cp/cp_last.pth.tar
+              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/221120_source_0_epoch1_lr0.00002_modelbert/cp/cp_last.pth.tar
+            elif [ "${model}" = "bart" ]; then
+              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/221120_source_0_epoch1_lr0.00001_modelbart/cp/cp_last.pth.tar
             fi
             if [ "${method}" = "Src" ]; then
               python main.py  --gpu_idx ${GPUS[i % ${NUM_GPUS}]} \

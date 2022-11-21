@@ -1,4 +1,4 @@
-LOG_PREFIX="221119_source" ## after normalization
+LOG_PREFIX="221120_source" ## after normalization
 
 #INITIAL parameters for running model
 GPUS=(0 1 2 3 4 5 6 7)
@@ -69,24 +69,3 @@ train_bart(){
 train_bert_based
 wait
 train_bart
-
-
-
-
-
-#main.py
-#--gpu_idx 1
-#--lr 0.2
-#--dataset finefood
-#--method ttaprompttune
-#--src test --tgt train
-#--online
-#--epoch 1
-#--model bert
-#--seed 0
-#--update_every_x 16
-#--memory_size 16
-#--load_checkpoint_path /home/twkim/git/tetra/log/sst-2/Src/tgt_test/221114_initial_gen_0/cp/cp_last.pth.tar
-#--log_prefix debug
-
-}#--adapt_type all
