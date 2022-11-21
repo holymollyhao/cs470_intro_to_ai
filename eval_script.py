@@ -223,17 +223,15 @@ def get_accuracy_from_dict(
         lr: str,
         all_dict: dict
 ):
-    if method != 'Src':
-        target_str = f'model_{model}_lr{lr}_memsize{memsize}_uex{memsize}_from_{dataset2}_to_{dataset1}'
-    else:
+    if method == 'Src':
         target_str = f'model_{model}_from_{dataset2}_to_{dataset1}'
-    print(target_str)
+    else:
+        target_str = f'model_{model}_lr{lr}_memsize{memsize}_uex{memsize}_from_{dataset2}_to_{dataset1}'
     target = None
     for key in all_dict.keys():
         if target_str in key and method in key:
             target = (key, all_dict[key])
             break
-    print(all_dict)
     assert target != None
     return target
 

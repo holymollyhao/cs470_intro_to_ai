@@ -22,9 +22,9 @@ wait_n() {
 N_TOKENS=30
 EPOCH=1
 DATASETS="finefood imdb sst-2"
-LR="0.3 0.1 0.01 0.001 0.0001 0.00001"
-METHODS="dattaprompttune ln_tent"
-UEX="16 32 64 128"
+LR="0.00001"
+METHODS="Src"
+UEX="16"
 MODELS="bert distilbert"
 for model in $MODELS; do
   for dataset1 in $DATASETS; do
