@@ -11,7 +11,7 @@ from utils.util_functions import get_max_position_embeddings, get_device
 device = get_device()
 
 domain_dict = {
-    "sst-2": "Do sentiment analysis on the following sentence ",
+    "sst-2": "This is a sentence from standford sentiment analysis datastet:  ",
     "imdb": "The is a movie review from imdb",
     "tomatoes": "This is a movie review from rottentomatoes",
     "finefood": "The follwing sentence is a food review:",

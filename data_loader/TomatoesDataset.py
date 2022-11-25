@@ -14,10 +14,7 @@ opt = conf.TomatoesOpt
 # reference: https://github.com/alinlab/MASKER/blob/9ba319389184942c430e4b6d71209f4b1162220e/data/base_dataset.py
 def tokenize(tokenizer, raw_text):
     import conf
-    if 'bart' in conf.args.model:
-        max_len = min(tokenizer.model_max_length, 1024) # 512 is the default for BERT model
-    elif 'bert' in conf.args.model:
-        max_len = min(tokenizer.model_max_length, 512)
+    max_len = min(tokenizer.model_max_length, 512)
     if len(raw_text) > max_len:
         raw_text = raw_text[:max_len]
 

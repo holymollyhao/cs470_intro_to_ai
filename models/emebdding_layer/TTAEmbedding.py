@@ -25,16 +25,16 @@ class TTAEmbedding(nn.Module):
         """
         super(TTAEmbedding, self).__init__()
 
-        self.wte = wte.to(device)
+        self.wte = wte
         self.n_tokens =n_tokens
 
         self.max_position_emebeddings, self.embed_tensor_size = get_max_position_embeddings()
         self.output_size = self.wte.weight.size()[1]
 
         self.new_linear = torch.nn.Parameter(
-            self.initialize_tensor(torch.randn(self.n_tokens, self.max_position_emebeddings))).to(device)
+            self.initialize_tensor(torch.randn(self.n_tokens, self.max_position_emebeddings)))
         self.new_bias = torch.nn.Parameter(
-            self.initialize_tensor(torch.randn(self.n_tokens))).to(device)
+            self.initialize_tensor(torch.randn(self.n_tokens)))
 
 
     def initialize_tensor(self,
