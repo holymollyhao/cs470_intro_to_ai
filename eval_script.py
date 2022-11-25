@@ -30,7 +30,7 @@ best_config ={
             'lr': '0.01'
         },
     },
-    'imdb':{ #재웅
+    'imdb':{
         'distilbert':{
             'uex': '16',
             'memsize': '16',
@@ -87,21 +87,15 @@ def get_avg_acc(file_path):
     return result/len(lines)
 
 def get_avg_online_acc(file_path):
-
     f = open(file_path)
     json_data = json.load(f)
-
-
     f.close()
 
     return json_data['accuracy'][-1]
 
 def get_avg_online_f1(file_path):
-
     f = open(file_path)
     json_data = json.load(f)
-
-
     f.close()
 
     return json_data['f1_macro'][-1]
@@ -119,6 +113,7 @@ def mp_work(path):
         tmp_dict = {}
         tmp_dict[path] = get_avg_online_acc(path + '/online_eval.json')
         return tmp_dict
+    
     elif args.eval_type == 'avg_f1_online':  # test data is also training data
         tmp_dict = {}
         tmp_dict[path] = get_avg_online_f1(path + '/online_eval.json')
@@ -132,7 +127,6 @@ def mp_work(path):
         for method in args.method:
             tmp_dict[path][method] = {}
             try:
-
                 re_found = re.search('\./log/(.+)/(.+)/(tgt_.+)/(.+)', path)
                 alg = re_found.groups()[1]
                 log_prefix = re_found.groups()[-1]
@@ -167,6 +161,7 @@ def mp_work(path):
 def print_per_domain(all_dict, opt, is_iabn):
     list_of_domains = opt['tgt_domains']
     list_of_acc_per_domain = [[] for i in range(len(list_of_domains))]
+    
     for domain in list_of_domains:
         if is_iabn:
             iter_list = [(key, value) for (key, value) in sorted(all_dict.items()) if 'iabn' in key]
@@ -175,6 +170,7 @@ def print_per_domain(all_dict, opt, is_iabn):
         for (k, v) in iter_list:
             if domain in k:
                 list_of_acc_per_domain[list_of_domains.index(domain)].append((k, v))
+                
     return list_of_acc_per_domain
 
 
@@ -182,6 +178,7 @@ def format_print_per_domain(input_dict, opt):
     for domain in opt['tgt_domains']:
         print(domain, end=' ')
     print('')
+    
     for index in range(3):
         for domain in opt['tgt_domains']:
             print(input_dict[opt['tgt_domains'].index(domain)][index][1], end=' ')
@@ -227,12 +224,14 @@ def get_accuracy_from_dict(
         target_str = f'model_{model}_from_{dataset2}_to_{dataset1}'
     else:
         target_str = f'model_{model}_lr{lr}_memsize{memsize}_uex{memsize}_from_{dataset2}_to_{dataset1}'
+        
     target = None
     for key in all_dict.keys():
         if target_str in key and method in key:
             target = (key, all_dict[key])
             break
     assert target != None
+    
     return target
 
 def draw_single_instance(

@@ -1,5 +1,4 @@
-LOG_PREFIX="221119_bart_tests" ## after normalization
-METHODS="dattaprompttune ln_tent"
+LOG_PREFIX="221125_testing" ## after normalization
 
 #INITIAL parameters for running model
 # GPUS=(2 3 4 5 6)
@@ -19,17 +18,19 @@ wait_n() {
     wait -n
   fi
 }
+
 EPOCHS="1"
 DATASETS="finefood" #this is fixed for source training
+MODELS="bert distilbert"
+METHODS="dattaprompttune ln_tent"
 #ADAPT_TYPE="all bn ln bnln emb"
 LRs="0.3 0.2 0.1 0.001 0.00001 0.000001"
+
 for EPOCH in $EPOCHS; do
   for DATASET in $DATASETS; do
     for METHOD in $METHODS; do
       for lr in $LRs; do
-        if [ "${METHOD}" = "ttaprompttune" ]; then
-            ADAPT_TYPE="all all_ln_bn"
-        elif [ "${METHOD}" = "ln_tent" ]; then
+        if [ "${METHOD}" = "ln_tent" ]; then
             ADAPT_TYPE="ln"
         elif [ "${METHOD}" = "dattaprompttune" ]; then
             ADAPT_TYPE="all embed"

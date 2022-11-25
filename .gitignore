@@ -8,3 +8,7 @@
 
 __pycache__/
 log/
+
+imdb_dataset/
+.cache/
+raw_logs/
