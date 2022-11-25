@@ -39,6 +39,6 @@ plt.ylabel('Accuracy(%)', fontsize=10)
 plt.yticks(range(0,101,20), fontsize=10)
 plt.xticks(index+ [bar_width]*2, label, fontsize=10)
 
-plt.legend((p1[0], p2[0], p3[0]), ('Source', 'LN-TENT', 'TeTra'), fontsize=10)
+plt.legend((p1[0], p2[0], p3[0]), ('Source', 'LN-TENT', r"$\bf{" + 'TeTra'+ "}$"), fontsize=10)
 plt.savefig('figures/bar_plot.pdf')  
 plt.show()
