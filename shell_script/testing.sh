@@ -2,7 +2,8 @@ LOG_PREFIX="221119_bart_tests" ## after normalization
 METHODS="dattaprompttune ln_tent"
 
 #INITIAL parameters for running model
-GPUS=(2 3 4 5 6)
+# GPUS=(2 3 4 5 6)
+GPUS=(0)
 NUM_GPUS=${#GPUS[@]}
 SEED=0
 i=0
@@ -11,8 +12,8 @@ n_tokens=30
 wait_n() {
   #limit the max number of jobs as NUM_MAX_JOB and wait
   background=($(jobs -p))
-  local default_num_jobs=5 #12
-  local num_max_jobs=5
+  local default_num_jobs=1 #12
+  local num_max_jobs=1
   echo $num_max_jobs
   if ((${#background[@]} >= num_max_jobs)); then
     wait -n
