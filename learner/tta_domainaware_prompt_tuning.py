@@ -2,14 +2,10 @@ import conf
 from .dnn import DNN
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import models
 from models.emebdding_layer import DATTAEmbedding
 from utils.loss_functions import *
 from utils.util_functions import print_summary
-from transformers import BertTokenizer
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
-
-# def initialize_gradient(module, bool):
 
 class TTA_DomainAware_Prompt_tuning(DNN):
     def __init__(self, *args, **kwargs):

@@ -293,11 +293,7 @@ def parse_arguments(argv):
 if __name__ == '__main__':
     import time
 
-    # print('Command:', end='\t')
-    # print(" ".join(sys.argv))
-
     st = time.time()
     args = parse_arguments(sys.argv[1:])
     main(args)
     print('')
-    # print(f'time:{time.time() - st}')

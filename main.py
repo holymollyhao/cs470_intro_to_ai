@@ -99,24 +99,12 @@ def main():
     elif conf.args.method == 'ln_tent':
         from learner.ln_tent import LN_TENT
         learner_method = LN_TENT
-    elif conf.args.method == "finetune":
-        from learner.finetune import Fine_tuning # finetuning
-        learner_method = Fine_tuning
-    elif conf.args.method == "finetune-top":
-        learner_method = None
-    elif conf.args.method == "prompttune": # softembedding
-        from learner.prompt_tuning import Prompt_tuning
-        learner_method = Prompt_tuning
-    elif conf.args.method == "ttaprompttune": # softembedding
+    elif conf.args.method == 'ttaprompttune':
         from learner.tta_prompt_tuning import TTA_Prompt_tuning
         learner_method = TTA_Prompt_tuning
-    elif conf.args.method == "dattaprompttune": # softembedding
+    elif conf.args.method == "dattaprompttune":
         from learner.tta_domainaware_prompt_tuning import TTA_DomainAware_Prompt_tuning
         learner_method = TTA_DomainAware_Prompt_tuning
-    elif conf.args.method == "prefixtune":
-        learner_method = None
-    elif conf.args.method == "adaptertune":
-        learner_method = None
     else:
         raise NotImplementedError(
             "Please specify the method using --method"

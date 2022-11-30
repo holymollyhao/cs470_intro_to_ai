@@ -1,7 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="f493e613-2c78-4e58-9c2c-0285c3956955" name="Changes" comment="" />
+    <list default="true" id="f493e613-2c78-4e58-9c2c-0285c3956955" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/eval_script.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval_script.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/dnn.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/dnn.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/finetune.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/ours.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/prompt_tuning.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/tent.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/tent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/tta_domainaware_prompt_tuning.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/tta_domainaware_prompt_tuning.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/tta_prompt_tuning.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/tta_prompt_tuning.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/BaseTransformer.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/BaseTransformer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/emebdding_layer/TTAEmbedding.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/baselines.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shell_script/baselines.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/results.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shell_script/results.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/test_source.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/testing.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/train_source.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/util_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/util_functions.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -55,7 +74,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="--gpu_idx 3 --dataset tomatoes --method Src --tgt test --epoch 0 --model bert --seed 0 --load_checkpoint_path //home/twkim/git/tetra/log/sst-2/Src/tgt_test/221114_initial_gen_0/cp/cp_last.pth.tar --log_prefix 221115_no_adapt_fromSrc_0_epoch0" />
+      <option name="PARAMETERS" value="--gpu_idx 5 --dataset finefood --method dattaprompttune --src train --tgt test --epoch 1 --update_every_x 32 --memory_size 32 --model bart --seed 0 --n_tokens 30 --adapt_type embed --online --lr 0.0001 --log_prefix debug --load_checkpoint_path log/finefood/Src/src_train/tgt_test/submission_source_0_epoch1_lr0.00001_modelbart/cp/cp_last.pth.tar" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -79,11 +98,23 @@
       <updated>1668272276036</updated>
       <workItem from="1668272278999" duration="37577000" />
       <workItem from="1668423203395" duration="12295000" />
+      <workItem from="1669805798356" duration="4446000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -97,6 +128,8 @@
     </breakpoint-manager>
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/cs470_intro_to_ai$main.coverage" NAME="main Coverage Results" MODIFIED="1668487193397" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/cs470_intro_to_ai$tta_domainaware_prompt_tuning.coverage" NAME="tta_domainaware_prompt_tuning Coverage Results" MODIFIED="1668699815795" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/learner" />
+    <SUITE FILE_PATH="coverage/cs470_intro_to_ai$eval_script.coverage" NAME="eval_script Coverage Results" MODIFIED="1669805697523" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/cs470_intro_to_ai$main.coverage" NAME="main Coverage Results" MODIFIED="1669809856244" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

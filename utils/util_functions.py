@@ -72,12 +72,18 @@ def ensure_result_directory(result_path, checkpoint_path, conf):
 def print_summary(model):
     print("###### SUMMARY of MODEL ######")
     cnt = 0
+    trainable = 0
+    total = 0
     for params in model.parameters():
         if params.requires_grad:
             print(f'{cnt}th trainable parameter: {np.prod(params.size())}')
+            trainable += np.prod(params.size())
+        total += np.prod(params.size())
         cnt += 1
     if cnt == 0:
         print(f'No trainable parameters')
+
+    print(f'total {total}, trainable {trainable}, prercentage {trainable/total}')
     print("##############################")
 
 def get_path():

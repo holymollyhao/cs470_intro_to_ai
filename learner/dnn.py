@@ -1,29 +1,11 @@
-import os
-
-import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
-import transformers
 from tqdm import tqdm
 from sklearn.metrics import confusion_matrix
-from sklearn.metrics import roc_auc_score
 from sklearn.metrics import f1_score
-from sklearn.preprocessing import label_binarize
-import math
-import conf
-from copy import deepcopy
-import random
-from sklearn.manifold import TSNE
-import seaborn as sns
-import pandas as pd
-import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from utils import memory
-
-from utils import iabn
 from utils.logging import *
-from utils.bn_remover import *
 from utils.normalize_layer import *
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
 torch.cuda.set_device(
@@ -214,16 +196,16 @@ class DNN():
         else:
             temp_net = BaseNet(self.net.model_name)
 
-        if conf.args.method == 'ttaprompttune':
-            from models.emebdding_layer.TTAEmbedding import TTAEmbedding
-            embedding = TTAEmbedding(
+        if conf.args.method == 'dattaprompttune':
+            from models.emebdding_layer.DATTAEmbedding import DATTAEmbedding
+            embedding = DATTAEmbedding(
                 temp_net.get_input_embeddings(),
                 n_tokens=self.n_tokens,
                 initialize_from_vocab=self.initialize_from_vocab,
             )
-        elif conf.args.method == 'dattaprompttune':
-            from models.emebdding_layer.DATTAEmbedding import DATTAEmbedding
-            embedding = DATTAEmbedding(
+        elif conf.args.method == 'ttaprompttune':
+            from models.emebdding_layer.SoftEmbedding import SoftEmbedding
+            embedding = SoftEmbedding(
                 temp_net.get_input_embeddings(),
                 n_tokens=self.n_tokens,
                 initialize_from_vocab=self.initialize_from_vocab,

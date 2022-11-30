@@ -3,7 +3,7 @@ from .dnn import DNN
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import models
-from models.emebdding_layer import TTAEmbedding
+from models.emebdding_layer import SoftEmbedding
 from utils.loss_functions import *
 from utils.util_functions import print_summary
 from transformers import BertTokenizer
@@ -26,10 +26,10 @@ class TTA_Prompt_tuning(DNN):
             input_embeddings = self.net.get_input_embeddings()
 
         ## only can be used with huggingface transformer models
-        self.tta_embedding = TTAEmbedding.TTAEmbedding(
+        self.tta_embedding = SoftEmbedding.SoftEmbedding(
             input_embeddings,
             n_tokens=self.n_tokens,
-            initialize_from_vocab = self.initialize_from_vocab,
+            initialize_from_vocab=self.initialize_from_vocab,
         )
 
         # setting the previous input_embeddings to current embedding
@@ -46,7 +46,7 @@ class TTA_Prompt_tuning(DNN):
             self.load_checkpoint(checkpoint_path)
 
         # initialize requires_grad of model
-        self.set_gradients(conf.args.adapt_type)
+        self.set_gradients('embed')
         print_summary(self.net)
 
 
@@ -168,8 +168,3 @@ class TTA_Prompt_tuning(DNN):
                 self.scheduler.step()
 
         return TRAINED
-
-
-
-
-

@@ -1,10 +1,8 @@
-LOG_PREFIX="221120_results" ## after normalization
-METHODS="Src"
+LOG_PREFIX="221201_results" ## after normalization
 
 #INITIAL parameters for running model
 GPUS=(1 2 3 4 5 6 7)
 NUM_GPUS=${#GPUS[@]}
-SEED=0
 i=0
 
 
@@ -25,7 +23,9 @@ DATASETS="finefood imdb sst-2"
 LR="0.01 0.00001"
 METHODS="Src"
 UEX="16 32 128"
-MODELS="bert distilbert bart"
+MODELS="bert distilbert"
+METHODS="Src ln_tent dattaprompttune"
+SEED=0
 for model in $MODELS; do
   for dataset1 in $DATASETS; do
     for dataset2 in $DATASETS; do
@@ -33,11 +33,9 @@ for model in $MODELS; do
         for method in $METHODS; do
           for uex in $UEX; do
             if [ "${model}" = "distilbert" ]; then
-              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/221120_source_0_epoch1_lr0.00002_modeldistilbert/cp/cp_last.pth.tar
+              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/submission_source_0_epoch1_lr0.00001_modeldistilbert/cp/cp_last.pth.tar
             elif [ "${model}" = "bert" ]; then
-              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/221120_source_0_epoch1_lr0.00002_modelbert/cp/cp_last.pth.tar
-            elif [ "${model}" = "bart" ]; then
-              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/221120_source_0_epoch1_lr0.00001_modelbart/cp/cp_last.pth.tar
+              load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/submission_source_0_epoch1_lr0.00001_modelbert/cp/cp_last.pth.tar
             fi
             if [ "${method}" = "Src" ]; then
               python main.py  --gpu_idx ${GPUS[i % ${NUM_GPUS}]} \
@@ -57,8 +55,10 @@ for model in $MODELS; do
               wait_n
               i=$((i + 1))
             else
-              if [ "${method}" = "ttaprompttune" ]; then
-                  ADAPT_TYPE="all all_ln_bn"
+              if [ "${method}" = "dattaprompttune" ]; then
+                  ADAPT_TYPE="all"
+              elif [ "${method}" = "ttaprompttune" ]; then
+                  ADAPT_TYPE="all"
               elif [ "${method}" = "ln_tent" ]; then
                   ADAPT_TYPE="ln"
               fi
@@ -90,8 +90,3 @@ for model in $MODELS; do
     done
   done
 done
-
-
-
-#                          --load_checkpoint_path /home/twkim/git/tetra/log/sst-2/Src/tgt_test/221114_initial_gen_0/cp/cp_last.pth.tar \
-

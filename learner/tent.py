@@ -18,8 +18,6 @@ class TENT(DNN):
         for module in self.net.modules():
 
             if isinstance(module, nn.BatchNorm1d) or isinstance(module, nn.BatchNorm2d):
-                # https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html
-                # TENT: force use of batch stats in train and eval modes: https://github.com/DequanWang/tent/blob/master/tent.py
                 if conf.args.use_learned_stats:
                     module.track_running_stats = True
                     module.momentum = conf.args.bn_momentum
