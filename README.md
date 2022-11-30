@@ -2,11 +2,17 @@
 
 Test-time adaptation on transformers
 
-## Installation
+## Prerequisites
 
 ### Set conda environment
 ```
 $ conda env create --file env.yaml
+```
+### Create directories (in root)
+```
+$ mkdir log/
+$ mkdir raw_logs/
+$ mkdir cache/
 ```
 
 ## Result reproduction
