@@ -55,3 +55,8 @@ $ python eval_script.py \
     --regex {LOG_PREFIX} \
     --directory {LOG_DIRECTORY}
 ```
+For reproduction purposes, we have set the default arguments accordingly with the baseline and test shell files, thus you can get the results simply by running:
+```
+$ python eval_script.py
+```
+
