@@ -1,4 +1,4 @@
-LOG_PREFIX="221201_results" ## after normalization
+LOG_PREFIX="submission_results" ## after normalization
 
 #INITIAL parameters for running model
 GPUS=(1 2 3 4 5 6 7)

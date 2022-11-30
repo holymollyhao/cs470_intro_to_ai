@@ -25,8 +25,8 @@ best_config ={
             'lr': '0.01'
         },
         'bert':{
-            'uex': '32',
-            'memsize': '32',
+            'uex': '16',
+            'memsize': '16',
             'lr': '0.01'
         },
     },
@@ -109,12 +109,10 @@ def get_avg_online_f1(file_path):
 
 def mp_work(path):
     # print(f'Current file:\t{path}')
-
     if args.eval_type == 'avg_acc': # with separate test data
         tmp_dict = {}
         tmp_dict[path] = get_avg_acc(path + '/accuracy.txt')
         return tmp_dict
-
     elif args.eval_type == 'avg_acc_online':  # test data is also training data
         tmp_dict = {}
         tmp_dict[path] = get_avg_online_acc(path + '/online_eval.json')
@@ -123,7 +121,6 @@ def mp_work(path):
         tmp_dict = {}
         tmp_dict[path] = get_avg_online_f1(path + '/online_eval.json')
         return tmp_dict
-
     elif args.eval_type == 'estimation':
         tmp_dict = {}
         tmp_dict[path] = {}
@@ -160,9 +157,7 @@ def mp_work(path):
             tmp_dict[path][method]['best_epoch'] = best_epoch
             tmp_dict[path][method]['acc_error'] = acc_error
             tmp_dict[path][method]['string'] = result
-
         return tmp_dict
-
 
 def print_per_domain(all_dict, opt, is_iabn):
     list_of_domains = opt['tgt_domains']
@@ -277,8 +272,8 @@ def parse_arguments(argv):
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--regex', type=str, default='', help='train condition regex')
-    parser.add_argument('--directory', type=str, default='',
+    parser.add_argument('--regex', type=str, default='.*submission_results.*', help='train condition regex')
+    parser.add_argument('--directory', type=str, default='log',
                         help='which directory to search through? ex: ichar/FT_FC')
     parser.add_argument('--eval_type', type=str, default='avg_acc_online',
                         help='what type of evaluation? in [result, log, estimation, dtw, avg_acc]')

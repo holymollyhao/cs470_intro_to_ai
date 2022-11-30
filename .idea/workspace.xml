@@ -4,22 +4,7 @@
     <list default="true" id="f493e613-2c78-4e58-9c2c-0285c3956955" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/eval_script.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval_script.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner/dnn.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/dnn.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner/finetune.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner/ours.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner/prompt_tuning.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner/tent.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/tent.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner/tta_domainaware_prompt_tuning.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/tta_domainaware_prompt_tuning.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/learner/tta_prompt_tuning.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/tta_prompt_tuning.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/BaseTransformer.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/BaseTransformer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/emebdding_layer/TTAEmbedding.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/shell_script/baselines.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shell_script/baselines.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/shell_script/results.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shell_script/results.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/shell_script/test_source.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/shell_script/testing.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/shell_script/train_source.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/util_functions.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/util_functions.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,7 +44,29 @@
       <recent name="$PROJECT_DIR$/models/emebdding_layer" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.eval_script">
+    <configuration name="eval_script" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="cs470_intro_to_ai" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/eval_script.py" />
+      <option name="PARAMETERS" value="--directory log/ --regex .*221201_results.*" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="cs470_intro_to_ai" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -82,8 +89,13 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.eval_script" />
+      <item itemvalue="Python.main" />
+    </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.eval_script" />
         <item itemvalue="Python.main" />
       </list>
     </recent_temporary>
@@ -98,7 +110,9 @@
       <updated>1668272276036</updated>
       <workItem from="1668272278999" duration="37577000" />
       <workItem from="1668423203395" duration="12295000" />
-      <workItem from="1669805798356" duration="4446000" />
+      <workItem from="1669805798356" duration="5529000" />
+      <workItem from="1669828528771" duration="198000" />
+      <workItem from="1669828730470" duration="491000" />
     </task>
     <servers />
   </component>
