@@ -4,7 +4,7 @@ Test-time adaptation on transformers
 
 ## Prerequisites
 
-### change current directory to project folder
+### Change current directory to project folder
 ```
 $ cd ./cs470_intro_to_ai
 ```
