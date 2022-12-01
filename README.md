@@ -18,10 +18,29 @@ $ mkdir log/
 $ mkdir raw_logs/
 $ mkdir cache/
 ```
+### Unzip the Dataset folder
+Download the finefood, sst-2, imdb dataset from the link below :
+and unzip them inside the ./dataset folder
 
 ## Result reproduction
 
-### 1. Source generation
+### 1. Edit the shell file
+Edit the function below accordingly, for a single gpu instance, set local_default_num_jobs (number of GPUs on server = 1),
+and local_num_max_jobs (total number of jobs to run concurrently = 1).
+```
+wait_n() {
+  #limit the max number of jobs as NUM_MAX_JOB and wait
+  background=($(jobs -p))
+  local default_num_jobs=8 #12
+  local num_max_jobs=8
+  echo $num_max_jobs
+  if ((${#background[@]} >= num_max_jobs)); then
+    wait -n
+  fi
+}
+```
+
+### 2. Source generation
 Trains 1 epoch on each source dataset to finetune weights of models (only 1 epoch is used due to time constraint)
 
 **Modifiable shell variables**
@@ -34,7 +53,7 @@ Trains 1 epoch on each source dataset to finetune weights of models (only 1 epoc
 $ ./shell_script/baselines.sh 
 ```
 
-### 2. Test-time Adaptation
+### 3. Test-time Adaptation
 Tests the trained source with different methods (LN_TENT, TeTra).
 
 **Modifiable shell variables**
