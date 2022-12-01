@@ -17,10 +17,16 @@ $ conda env create --file env.yaml
 $ mkdir log/
 $ mkdir raw_logs/
 $ mkdir cache/
+$ mkdir dataset/
 ```
 ### Unzip the Dataset folder
+```
 Download the finefood, sst-2, imdb dataset from the link below :
-and unzip them inside the ./dataset folder
+https://drive.google.com/file/d/1Ll0B1EL53AitPQBe8pPUHNopp-kIw8o4/view?usp=sharing
+
+Unzip them inside the ./dataset folder
+```
+
 
 ## Result reproduction
 
