@@ -5,9 +5,9 @@ Test-time adaptation on transformers
 ## Prerequisites
 
 ### change current directory to project folder
-'''
+```
 $ cd ./cs470_intro_to_ai
-'''
+```
 ### Set conda environment
 ```
 $ conda env create --file env.yaml
