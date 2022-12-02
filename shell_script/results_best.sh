@@ -24,7 +24,7 @@ METHODS="Src ln_tent dattaprompttune"
 DATASETS="finefood imdb sst-2"
 LR="0.01 0.00001"
 UEX="16 32 128"
-SEED="0 1 2"
+SEED=0
 
 # best configuration for reproduction
 declare -A best_config
@@ -69,9 +69,9 @@ for seed in $SEED; do
             for dataset2 in $DATASETS; do
                 for method in $METHODS; do
                     if [ "${model}" = "distilbert" ]; then
-                        load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/submission_source_${seed}_epoch1_lr0.00005_modeldistilbert/cp/cp_last.pth.tar
+                        load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/submission_source_0_epoch1_lr0.00001_modeldistilbert/cp/cp_last.pth.tar
                     elif [ "${model}" = "bert" ]; then
-                        load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/submission_source_${seed}_epoch1_lr0.00005_modelbert/cp/cp_last.pth.tar
+                        load_checkpoint_path=log/${dataset2}/Src/src_train/tgt_test/submission_source_0_epoch1_lr0.00001_modelbert/cp/cp_last.pth.tar
                     fi
 
                     if [ "${method}" = "Src" ]; then
