@@ -6,3 +6,10 @@
 *.iml
 *.xml
 .idea/workspace.xml
+
+__pycache__/
+.cache/
+cache/
+log/
+raw_logs/
+dataset/

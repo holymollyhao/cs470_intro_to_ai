@@ -280,13 +280,13 @@ def parse_arguments(argv):
                         help="How many iteration steps you would like to take")
     parser.add_argument('--log_prefix', type=str, default='',
                         help='Suffix of log file path')
-    parser.add_argument('--cache_dir', type=str, default='/mnt/sting/twkim/tetra/cache/',
+    parser.add_argument('--cache_dir', type=str, default='./cache/',
                         help='cache directory that stores the pretrained models')
     parser.add_argument('--src_sep', action='store_true', help='Separate domains for source')
     parser.add_argument('--src_sep_noshuffle', action='store_true', help='Separate domains for source')
     parser.add_argument('--num_source', type=int, default=100,
                         help='number of available sources')
-    parser.add_argument('--cache_path', type=str, default='/mnt/sting/twkim/tetra/cache/', help='cache path')
+    parser.add_argument('--cache_path', type=str, default='./cache/', help='cache path')
     parser.add_argument('--nsample', type=int, default=99999,
                         help='How many samples do you want use for train')
     parser.add_argument('--log_percentile', action='store_true', help='percentile logging process')

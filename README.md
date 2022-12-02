@@ -71,6 +71,11 @@ Tests the trained source with different methods (LN_TENT, TeTra).
 $ ./shell_script/results.sh 
 ```
 
+To checkout only the best results of our work, you can run
+```
+$ ./shell_script/results_best.sh 
+```
+
 ### 3. Evaluation
 Reproduce the results
 
