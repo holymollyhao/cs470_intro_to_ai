@@ -113,8 +113,8 @@ for seed in $SEED; do
                                   --adapt_type ${adapt_type} \
                                   --online \
                                   --lr ${lr} \
-                                  —log_prefix ${LOG_PREFIX}_${seed}_model_${model}_lr${lr}_memsize${uex}_uex${uex}_from_${dataset2}_to_${dataset1} \
-                                  —load_checkpoint_path ${load_checkpoint_path} \
+                                  --log_prefix ${LOG_PREFIX}_${seed}_model_${model}_lr${lr}_memsize${uex}_uex${uex}_from_${dataset2}_to_${dataset1} \
+                                  --load_checkpoint_path ${load_checkpoint_path} \
                                 2>&1 | tee raw_logs/${LOG_PREFIX}_${seed}_model_${model}_lr${lr}_memsize${uex}_uex${uex}_from_${dataset2}_to_${dataset1}.txt &
                             wait_n
                             i=$((i + 1))
