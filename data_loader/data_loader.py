@@ -6,7 +6,6 @@ import math
 from .IMDBDataset import IMDBDataset
 from .SST2Dataset import SST2Dataset
 from .FineFoodDataset import FineFoodDataset
-from .TomatoesDataset import TomatoesDataset
 
 
 import os
@@ -178,15 +177,6 @@ def domain_data_loader(dataset, domains, file_path, batch_size, train_max_rows=n
             loaded_data = FineFoodDataset(file=file_path, domains=cond, max_source=num_source, tokenizer=tokenizer)
             save_cache(loaded_data, dataset, processed_domains, file_path, transform=transform)
 
-    elif dataset in ['tomatoes']:
-        cond = processed_domains
-
-        transform = 'src' if is_src else 'val'
-        loaded_data = load_cache(dataset, processed_domains, file_path, transform=transform)
-
-        if not loaded_data:
-            loaded_data = TomatoesDataset(file=file_path, domains=cond, max_source=num_source, tokenizer=tokenizer)
-            save_cache(loaded_data, dataset, processed_domains, file_path, transform=transform)
 
     if separate_domains:
         for train_data in loaded_data.get_datasets_per_domain():
@@ -216,11 +206,8 @@ def domain_data_loader(dataset, domains, file_path, batch_size, train_max_rows=n
     print('# Time: {:f} secs'.format(time.time() - st))
 
     if separate_domains:
-        # actual batch size is multiplied by num_class
         train_data_loaders = datasets_to_dataloader(train_datasets, batch_size=batch_size, concat=False, drop_last=True, shuffle=False if conf.args.src_sep_noshuffle else True)
-        # if 'PN' in conf.args.method:
-        #     test_batch_size = 5
-        # else:
+
         valid_data_loaders = datasets_to_dataloader(valid_datasets, batch_size=32,
                                                     concat=False)  # set validation batch_size = 32 to boost validation speed
         if is_src:

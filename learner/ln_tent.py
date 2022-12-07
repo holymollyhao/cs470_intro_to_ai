@@ -18,8 +18,6 @@ class LN_TENT(DNN):
         for module in self.net.modules():
             # if isinstance(module, nn.BatchNorm2d) or isinstance(module, nn.BatchNorm1d):
             if isinstance(module, nn.LayerNorm):
-                # https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm1d.html
-                # TENT: force use of batch stats in train and eval modes: https://github.com/DequanWang/tent/blob/master/tent.py
                 module.weight.requires_grad_(True)
                 module.bias.requires_grad_(True)
 
@@ -65,12 +63,7 @@ class LN_TENT(DNN):
         # setup models
         self.net.train()
 
-        from utils.util_functions import print_summary
-        # print_summary(self.net)
-
         if len(feats) == 1:  # avoid BN error
-            # self.feature_extractor.eval()
-            # self.class_classifier.eval()
             self.net.eval()
 
         feats, cls, dls = self.mem.get_memory()

@@ -2,14 +2,13 @@ import conf
 from .dnn import DNN
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import models
-from models.emebdding_layer import TTAEmbedding
+from models.emebdding_layer import SoftEmbedding
 from utils.loss_functions import *
 from utils.util_functions import print_summary
-from transformers import BertTokenizer
+import numpy as np
 device = torch.device("cuda:{:d}".format(conf.args.gpu_idx) if torch.cuda.is_available() else "cpu")
 
-# def initialize_gradient(module, bool):
+
 
 class TTA_Prompt_tuning(DNN):
     def __init__(self, *args, **kwargs):
@@ -26,7 +25,7 @@ class TTA_Prompt_tuning(DNN):
             input_embeddings = self.net.get_input_embeddings()
 
         ## only can be used with huggingface transformer models
-        self.tta_embedding = TTAEmbedding.TTAEmbedding(
+        self.tta_embedding = SoftEmbedding.SoftEmbedding(
             input_embeddings,
             n_tokens=self.n_tokens,
             initialize_from_vocab = self.initialize_from_vocab,
@@ -46,7 +45,7 @@ class TTA_Prompt_tuning(DNN):
             self.load_checkpoint(checkpoint_path)
 
         # initialize requires_grad of model
-        self.set_gradients(conf.args.adapt_type)
+        self.set_gradients('embed')
         print_summary(self.net)
 
 
@@ -151,23 +150,38 @@ class TTA_Prompt_tuning(DNN):
                 feats = feats.to(device)
                 cls = cls.to(device)
 
-                # prediction from network
-                preds_of_data = self.net(feats)
-                # entropy loss of the predictions
-                if conf.args.use_gt:
-                    loss = self.class_criterion(preds_of_data, cls)
-                else:
-                    loss = entropy_loss(preds_of_data)
+                for feat in feats:
+                    aug_feats = self.create_augmentation_batch(feat, batch_size=conf.args.memory_size).to(device)
+                    preds_of_data = self.net(aug_feats)
+                    conf_of_data = torch.max(preds_of_data, 1)
 
+                    idx_of_data = torch.argsort(conf_of_data[0])[:16]
+                    sorted_preds_of_data = preds_of_data[idx_of_data].to(device)
+                    loss = entropy_loss(sorted_preds_of_data)
 
-                # backpropagate the loss
-                self.optimizer.zero_grad()
-                loss.backward()
-                self.optimizer.step()
+                    # backpropagate the loss
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
 
-                self.scheduler.step()
+                    self.scheduler.step()
 
         return TRAINED
+
+
+    def create_augmentation_batch(self, feat, prob=0.2, batch_size=16):
+        import torch.nn.functional as F
+
+        augmented_list = []
+        for i in range(batch_size):
+            m = int(feat.shape[0]*prob)
+            indices = np.random.choice(feat.shape[0], m, replace=False)
+            new_feat = feat.clone()
+            new_feat[indices] = 0
+            augmented_list.append(new_feat)
+        return torch.stack(augmented_list)
+
+
 
 
 

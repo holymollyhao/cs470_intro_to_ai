@@ -1,4 +1,4 @@
-LOG_PREFIX="221120_source" ## after normalization
+LOG_PREFIX="submission_source" ## after normalization
 
 #INITIAL parameters for running model
 GPUS=(0 1 2 3 4 5 6 7)
@@ -21,7 +21,7 @@ train_bert_based(){
   MODEL="bert distilbert"
   DATASET="finefood imdb sst-2"
   epoch="1"
-  lr="0.00002"
+  lr="0.00001"
   method="Src"
   for dataset in $DATASET; do
     for model in $MODEL; do
@@ -67,5 +67,3 @@ train_bart(){
 }
 
 train_bert_based
-wait
-train_bart

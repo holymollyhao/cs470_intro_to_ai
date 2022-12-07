@@ -1,22 +1,7 @@
 import conf
 import torch
 import torch.nn as nn
-from models.emebdding_layer import SoftEmbedding
-# from transformers import (
-#     # BartForConditionalGeneration,
-#     AdamW,
-#     AutoConfig,
-#     AutoModel,
-#     AutoModelForPreTraining,
-#     AutoModelForQuestionAnswering,
-#     AutoModelForSeq2SeqLM,
-#     AutoModelForSequenceClassification,
-#     AutoModelForTokenClassification,
-#     AutoModelWithLMHead,
-#     AutoTokenizer,
-#     PretrainedConfig,
-#     PreTrainedTokenizer,
-# )
+
 dimension_dictionary = {
     'bert': 768,
     'distilbert': 768,
@@ -27,27 +12,6 @@ dimension_dictionary = {
     'mobilebert': 512,
     'bart': 1024,
 }
-
-
-# MODEL_MODES = {
-#     "base": AutoModel, # used as default setting
-#     "sequence-classification": AutoModelForSequenceClassification,
-#     "question-answering": AutoModelForQuestionAnswering,
-#     "pretraining": AutoModelForPreTraining,
-#     "token-classification": AutoModelForTokenClassification,
-#     "language-modeling": AutoModelWithLMHead,
-#     "summarization": AutoModelForSeq2SeqLM,
-#     "translation": AutoModelForSeq2SeqLM,
-# }
-
-# def load_model(name, mode, output_attentions=False):
-#     if name == 'bert':
-#         model_name = 'bert-base-uncased'
-#         config = AutoConfig.from_pretrained(model_name, cache_dir=conf.args.cache_dir)
-#         tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=conf.args.cache_dir)
-#         model = MODEL_MODES[mode].from_pretrained(model_name, config=config, cache_dir=conf.args.cache_dir)
-#     elif name == 'distilbert':
-#         model_name =
 
 def load_backbone(name, output_attentions=False):
     if name == 'bert':

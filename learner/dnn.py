@@ -77,18 +77,7 @@ class DNN():
 
 
         ################## Set Memory Management Techniques ###################
-        if conf.args.memory_type == 'FIFO':
-            self.mem = memory.FIFO(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'CBRS':
-            self.mem = memory.CBRS_debug(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'Reservoir':
-            self.mem = memory.Reservoir(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'Diversity':
-            self.mem = memory.Diversity(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'CBFIFO':
-            self.mem = memory.CBFIFO_debug(capacity=conf.args.memory_size)
-        elif conf.args.memory_type == 'CBReservoir':
-            self.mem = memory.CBReservoir_debug(capacity=conf.args.memory_size)
+        self.mem = memory.FIFO(capacity=conf.args.memory_size)
 
         self.json = {}
         self.occurred_class = [0 for i in range(conf.args.opt['num_class'])]
@@ -149,8 +138,6 @@ class DNN():
                                      result_cl_labels,
                                      torch.stack(result_do_labels))
 
-        # self.target_support_remaining_set = (torch.stack(features), torch.stack(cl_labels), torch.stack(do_labels))
-
 
     def save_checkpoint(self, epoch, epoch_acc, best_acc, checkpoint_path):
 
@@ -188,15 +175,13 @@ class DNN():
                 new_state_dict[k] = v
             checkpoint = new_state_dict
 
-
+        # https://discuss.pytorch.org/t/runtimeerror-error-s-in-loading-state-dict-for-dataparallel-missing-key-s-in-state-dict/31725/6
         if isinstance(self.net, nn.Sequential):
             if isinstance(self.net[0], NormalizeLayer):
                 self.net[1].load_state_dict(checkpoint, strict=True)
         else:
             self.net.load_state_dict(checkpoint, strict=True)
 
-        # # https://discuss.pytorch.org/t/runtimeerror-error-s-in-loading-state-dict-for-dataparallel-missing-key-s-in-state-dict/31725/6
-        # self.net.load_state_dict(checkpoint, strict=True)
         self.net.to(device)
 
     # loading from source, which does not have any softempbedding layer
@@ -215,15 +200,8 @@ class DNN():
             temp_net = BaseNet(self.net.model_name)
 
         if conf.args.method == 'ttaprompttune':
-            from models.emebdding_layer.TTAEmbedding import TTAEmbedding
-            embedding = TTAEmbedding(
-                temp_net.get_input_embeddings(),
-                n_tokens=self.n_tokens,
-                initialize_from_vocab=self.initialize_from_vocab,
-            )
-        elif conf.args.method == 'dattaprompttune':
-            from models.emebdding_layer.DATTAEmbedding import DATTAEmbedding
-            embedding = DATTAEmbedding(
+            from models.emebdding_layer.SoftEmbedding import SoftEmbedding
+            embedding = SoftEmbedding(
                 temp_net.get_input_embeddings(),
                 n_tokens=self.n_tokens,
                 initialize_from_vocab=self.initialize_from_vocab,
@@ -242,10 +220,6 @@ class DNN():
         # setup models
 
         self.net.train()
-        # if conf.args.parallel:
-        #     self.net.module.set_backbone_gradient(conf.args.set_backbone_true)
-        # else:
-        #     self.net.set_backbone_gradient(conf.args.set_backbone_true)
         class_loss_sum = 0.0
         total_iter = 0
 
@@ -277,7 +251,6 @@ class DNN():
 
                 # take scheduler step
                 self.scheduler.step()
-        # self.log_current_test_acc()
 
         ######################## LOGGING #######################
 
@@ -317,9 +290,6 @@ class DNN():
             class_cm_test_data = confusion_matrix(tgt_cls.cpu(), y_pred.cpu(), labels=labels)
 
 
-        # print('{:s}: [epoch : {:d}]\tLoss: {:.6f} \t'.format(
-        #     condition, epoch, class_loss_of_test_data
-        # ))
         class_accuracy = 100.0 * np.sum(np.diagonal(class_cm_test_data)) / np.sum(class_cm_test_data)
         print('[epoch:{:d}] {:s} {:s} class acc: {:.3f}'.format(epoch, condition, 'test', class_accuracy))
 

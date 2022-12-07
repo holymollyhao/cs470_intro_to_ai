@@ -2,8 +2,37 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f493e613-2c78-4e58-9c2c-0285c3956955" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/learner/masked_dattaprompttune.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/cs470_intro_to_ai.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cs470_intro_to_ai.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/deployment.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/deployment.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/remote-mappings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/remote-mappings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/conf.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_loader/TomatoesDataset.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/data_loader/data_loader.py" beforeDir="false" afterPath="$PROJECT_DIR$/data_loader/data_loader.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/env.yml" beforeDir="false" afterPath="$PROJECT_DIR$/env.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/eval_script.py" beforeDir="false" afterPath="$PROJECT_DIR$/eval_script.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/dnn.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/dnn.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/finetune.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/ln_tent.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/ln_tent.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/masked_dattaprompttune.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/ours.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/prompt_tuning.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/tent.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/tta_domainaware_prompt_tuning.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/learner/tta_prompt_tuning.py" beforeDir="false" afterPath="$PROJECT_DIR$/learner/tta_prompt_tuning.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/BaseTransformer.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/BaseTransformer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/emebdding_layer/DATTAEmbedding.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/emebdding_layer/SoftEmbedding.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/emebdding_layer/SoftEmbedding.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/emebdding_layer/TTAEmbedding.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/baselines.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shell_script/baselines.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/results.sh" beforeDir="false" afterPath="$PROJECT_DIR$/shell_script/results.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/test_source.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/testing.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/shell_script/train_source.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/memory.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/memory.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,22 +57,45 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;true&quot;,
-    &quot;credentialsType com.jetbrains.python.remote.PyCreateRemoteInterpreterDialog$PyCreateRemoteSdkForm&quot;: &quot;Web Deployment&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/twkim/Desktop/cs470_intro_to_ai/models/emebdding_layer&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "true",
+    "credentialsType com.jetbrains.python.remote.PyCreateRemoteInterpreterDialog$PyCreateRemoteSdkForm": "Web Deployment",
+    "last_opened_file_path": "/Users/twkim/Desktop/cs470_intro_to_ai/models/emebdding_layer",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/models/emebdding_layer" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Python.eval_script">
+    <configuration name="eval_script" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="cs470_intro_to_ai" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/eval_script.py" />
+      <option name="PARAMETERS" value="--directory log --regex .*221203_results.*" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="cs470_intro_to_ai" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -58,7 +110,7 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
-      <option name="PARAMETERS" value="--gpu_idx 3 --dataset tomatoes --method Src --tgt test --epoch 0 --model bert --seed 0 --load_checkpoint_path //home/twkim/git/tetra/log/sst-2/Src/tgt_test/221114_initial_gen_0/cp/cp_last.pth.tar --log_prefix 221115_no_adapt_fromSrc_0_epoch0" />
+      <option name="PARAMETERS" value="--gpu_idx 0 --dataset finefood --method ttaprompttune --tgt test --epoch 1 --online --update_every_x 32 --memory_size 32 --lr 0.001 --model bert --seed 0 --load_checkpoint_path /home/twkim/git/tetra/log/sst-2/Src/src_train/tgt_test/submission_source_0_epoch1_lr0.00001_modelbert/cp/cp_last.pth.tar --log_prefix debug" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
       <option name="MODULE_MODE" value="false" />
@@ -66,8 +118,13 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <list>
+      <item itemvalue="Python.eval_script" />
+      <item itemvalue="Python.main" />
+    </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.eval_script" />
         <item itemvalue="Python.main" />
       </list>
     </recent_temporary>
@@ -82,6 +139,10 @@
       <updated>1668272276036</updated>
       <workItem from="1668272278999" duration="37577000" />
       <workItem from="1668423203395" duration="12295000" />
+      <workItem from="1669942798703" duration="1414000" />
+      <workItem from="1669994087761" duration="13119000" />
+      <workItem from="1670283653988" duration="6624000" />
+      <workItem from="1670305172706" duration="10956000" />
     </task>
     <servers />
   </component>
@@ -112,7 +173,7 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/cs470_intro_to_ai$tta_domainaware_prompt_tuning.coverage" NAME="tta_domainaware_prompt_tuning Coverage Results" MODIFIED="1668699815795" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/learner" />
-    <SUITE FILE_PATH="coverage/cs470_intro_to_ai$eval_script.coverage" NAME="eval_script Coverage Results" MODIFIED="1669805697523" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/cs470_intro_to_ai$main.coverage" NAME="main Coverage Results" MODIFIED="1669809856244" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/cs470_intro_to_ai$eval_script.coverage" NAME="eval_script Coverage Results" MODIFIED="1670034017397" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/cs470_intro_to_ai$main.coverage" NAME="main Coverage Results" MODIFIED="1670288371477" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

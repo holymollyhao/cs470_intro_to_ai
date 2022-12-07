@@ -7,7 +7,6 @@ import numpy as np
 import torch
 import models
 import models.BaseTransformer
-import models.emebdding_layer.SoftEmbedding
 import torchvision
 import time
 import os
@@ -38,56 +37,16 @@ def main():
     model = None
     tokenizer = None
 
-    if conf.args.model == "resnet50_scratch":
-        model = torchvision.models.resnet50(pretrained=False)
-    elif conf.args.model == "resnet50_pretrained":
-        model = torchvision.models.resnet50(pretrained=True)
-    elif conf.args.model == "resnet18":
-        from models import ResNet
-        model = ResNet.ResNet18()
-    elif conf.args.model == "resnet18_scratch":
-        model = torchvision.models.resnet18(pretrained=False)
-    elif conf.args.model == "resnet18_pretrained":
-        model = torchvision.models.resnet18(pretrained=True)
-    elif conf.args.model == "resnet34_scratch":
-        model = torchvision.models.resnet34(pretrained=False)
-    elif conf.args.model == "resnet34_pretrained":
-        model = torchvision.models.resnet34(pretrained=True)
-    elif conf.args.model == "bert":
+    if conf.args.model == "bert":
         model = models.BaseTransformer.BaseNet(model_name='bert')
         tokenizer = model.get_tokenizer()
     elif conf.args.model == "distilbert":
         model = models.BaseTransformer.BaseNet(model_name='distilbert')
         tokenizer = model.get_tokenizer()
-    elif conf.args.model == "bert-tiny":
-        model = models.BaseTransformer.BaseNet(model_name='bert-tiny')
-        tokenizer = model.get_tokenizer()
-    elif conf.args.model == "bert-mini":
-        model = models.BaseTransformer.BaseNet(model_name='bert-mini')
-        tokenizer = model.get_tokenizer()
-    elif conf.args.model == "bert-small":
-        model = models.BaseTransformer.BaseNet(model_name='bert-small')
-        tokenizer = model.get_tokenizer()
-    elif conf.args.model == "bert-medium":
-        model = models.BaseTransformer.BaseNet(model_name='bert-medium')
-        tokenizer = model.get_tokenizer()
-    elif conf.args.model == "mobilebert":
-        model = models.BaseTransformer.BaseNet(model_name='mobilebert')
-        tokenizer = model.get_tokenizer()
-    elif conf.args.model == "bart":
-        model = models.BaseTransformer.BaseNet(model_name='bart')
-        tokenizer = model.get_tokenizer()
-    elif conf.args.model == "rvt":
-        print('constructing rvt+ small')
-        from timm.models import create_model
-        model = create_model('rvt_small_plus', opt=opt).to(device)
-        print(model)
-
-    # config = AutoConfig.from_pretrained(config_name, cache_dir=conf.args.cache_dir)
-    # tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, cache_dir=conf.args.cache_dir)
+    else:
+        raise NotImplementedError
 
     result_path, checkpoint_path, log_path = get_path()
-    # tensorboard = Tensorboard(log_path)
 
     ################### Load method #################
 
@@ -99,24 +58,9 @@ def main():
     elif conf.args.method == 'ln_tent':
         from learner.ln_tent import LN_TENT
         learner_method = LN_TENT
-    elif conf.args.method == "finetune":
-        from learner.finetune import Fine_tuning # finetuning
-        learner_method = Fine_tuning
-    elif conf.args.method == "finetune-top":
-        learner_method = None
-    elif conf.args.method == "prompttune": # softembedding
-        from learner.prompt_tuning import Prompt_tuning
-        learner_method = Prompt_tuning
-    elif conf.args.method == "ttaprompttune": # softembedding
+    elif conf.args.method == "ttaprompttune":
         from learner.tta_prompt_tuning import TTA_Prompt_tuning
         learner_method = TTA_Prompt_tuning
-    elif conf.args.method == "dattaprompttune": # softembedding
-        from learner.tta_domainaware_prompt_tuning import TTA_DomainAware_Prompt_tuning
-        learner_method = TTA_DomainAware_Prompt_tuning
-    elif conf.args.method == "prefixtune":
-        learner_method = None
-    elif conf.args.method == "adaptertune":
-        learner_method = None
     else:
         raise NotImplementedError(
             "Please specify the method using --method"
@@ -198,8 +142,6 @@ def main():
                                 checkpoint_path=checkpoint_path + 'cp_last.pth.tar')
         learner.dump_eval_online_result(is_train_offline=True)  # eval with final model
 
-        # if conf.args.log_bn_stats:
-        #     learner.hook_logger.dump_logbnstats_result()
 
         time_elapsed = time.time() - since
         print('Completion time: {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -234,14 +176,10 @@ def main():
                                 checkpoint_path=checkpoint_path + 'cp_last.pth.tar')
         learner.dump_eval_online_result()
 
-        # if conf.args.log_bn_stats:
-        #     learner.hook_logger.dump_logbnstats_result()
-
         time_elapsed = time.time() - since
         print('Completion time: {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
         print('Best val Acc: {:4f} at Epoch: {:d}'.format(best_acc, best_epoch))
 
-    # tensorboard.close()
 
 
 
@@ -266,9 +204,6 @@ def parse_arguments(argv):
     parser.add_argument('--tgt_train_dist', type=int, default=1,
                         help='0: real selection'
                              '1: random selection'
-                             '2: sorted selection'
-                             '3: uniform selection'
-                             '4: dirichlet distribution'
                         )
     parser.add_argument('--load_checkpoint_path', type=str, default='',
                         help='Load checkpoint and train from checkpoint in path?')
@@ -309,17 +244,11 @@ def parse_arguments(argv):
     ### Used for Test-time Adaptation ###
     parser.add_argument('--update_every_x', type=int, default=64, help='number of target samples used for every update')
     parser.add_argument('--online', action='store_true', help='training via online learning?')
-    parser.add_argument('--adapt_with_ln', action='store_true', help='adapt layer normalization layer as well')
 
     ### Memory Type ###
     parser.add_argument('--memory_size', type=int, default=64,
                         help='number of previously trained data to be used for training')
-    parser.add_argument('--memory_type', type=str, default='FIFO',
-                        help='FIFO'
-                             'Reservoir'
-                             'Diversity'
-                             'CBRS'
-                        )
+
 
     ### Used for Efficient Processing ###
     parser.add_argument('--save_every_n', type=int, default=-1, help='save checkpoint every n')
@@ -333,11 +262,6 @@ def parse_arguments(argv):
     parser.add_argument('--n_tokens', type=int, default=20, help='number of tokens to use')
     parser.add_argument('--no_init_from_vocab', action='store_true', help='if specified, do not initialize from vocab')
     parser.add_argument('--set_backbone_true', action='store_true', help='if specified, the backbone gradients are set to true')
-
-    # parser.add_argument('--iabn', action='store_true', help='replace bn with iabn layer')
-    # parser.add_argument('--iabn_k', type=float, default=4.0,
-    #                     help='k for iabn')
-    # parser.add_argument('--pretrain_wo_iabn', action='store_true', help='replace bn with iabn layer wo pretraining the model with iabn')
 
     return parser.parse_args()
 

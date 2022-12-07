@@ -3,10 +3,10 @@
   <component name="PublishConfigData" autoUpload="Always" serverName="twkim@suzy.kaist.ac.kr:45555" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
-      <paths name="twkim@iu.kaist.ac.kr:45555 (2)">
+      <paths name="twkim@iu.kaist.ac.kr:45555">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/twkim/git/tetra" local="$PROJECT_DIR$" />
+            <mapping deploy="/home/twkim/git/tetra" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

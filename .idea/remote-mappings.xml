@@ -3,6 +3,13 @@
   <component name="RemoteMappingsManager">
     <list>
       <list>
+        <remote-mappings server-id="python@sftp://twkim@sooae.kaist.ac.kr:45555/home/twkim/anaconda3/envs/tetra/bin/python">
+          <settings>
+            <list>
+              <mapping local-root="$PROJECT_DIR$" remote-root="/home/twkim/git/tetra" />
+            </list>
+          </settings>
+        </remote-mappings>
         <remote-mappings server-id="python@sftp://twkim@iu.kaist.ac.kr:45555/home/twkim/anaconda3/envs/tetra/bin/python">
           <settings>
             <list>
