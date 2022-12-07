@@ -101,8 +101,8 @@ def draw_single_instance(
 
     datasets = sorted(['finefood', 'sst-2', 'imdb'])
     table = Texttable()
-    table.set_cols_align(['l', 'c', 'c', 'c', 'c', 'c', 'c'])
-    table.set_cols_width(['10', '15', '15', '15', '15', '15', '15'])
+    table.set_cols_align(['l', 'c', 'c', 'c', 'c'])
+    table.set_cols_width(['10', '15', '15', '15', '15'])
 
     first_col = [f'Method\nwith\n{model.upper()}']
     for dataset1 in datasets:
@@ -113,7 +113,7 @@ def draw_single_instance(
 
     for method in ['Src', 'ln_tent', 'ttaprompttune']:
         single_row = [method_format[method]]
-        for dataset1 in datasets:
+        for dataset1 in ['finefood', 'sst-2']:
             for dataset2 in datasets:
                 if dataset1 != dataset2:
                     import numpy as np
