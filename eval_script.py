@@ -105,7 +105,7 @@ def draw_single_instance(
     table.set_cols_width(['10', '15', '15', '15', '15'])
 
     first_col = [f'Method\nwith\n{model.upper()}']
-    for dataset1 in datasets:
+    for dataset1 in ['finefood', 'sst-2']:
         for dataset2 in datasets:
             if dataset1 != dataset2:
                 first_col.append(f'{dataset2}\nto\n{dataset1}')
