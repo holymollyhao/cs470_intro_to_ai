@@ -20,8 +20,8 @@ i=0
 wait_n() {
   #limit the max number of jobs as NUM_MAX_JOB and wait
   background=($(jobs -p))
-  local default_num_jobs=8 #12
-  local num_max_jobs=8
+  local default_num_jobs=1 #12
+  local num_max_jobs=1
   echo $num_max_jobs
   if ((${#background[@]} >= num_max_jobs)); then
     wait -n
