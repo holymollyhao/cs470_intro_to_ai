@@ -24,8 +24,8 @@ mkdir raw_logs # save console outputs here
 wait_n() {
   #limit the max number of jobs as NUM_MAX_JOB and wait
   background=($(jobs -p))
-  local default_num_jobs=3 #num concurrent jobs
-  local num_max_jobs=${1:-$default_num_jobs}
+  local default_num_jobs=1 #num concurrent jobs
+  local num_max_jobs=1
   if ((${#background[@]} >= num_max_jobs)); then
     wait -n
   fi
