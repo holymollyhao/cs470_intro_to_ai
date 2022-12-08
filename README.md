@@ -19,7 +19,9 @@ $ mkdir raw_logs/
 $ mkdir cache/
 $ mkdir dataset/
 ```
-### Unzip the Dataset folder
+
+### (Optional)Unzip the Dataset folder
+If you have trouble with loading dataset, follow below lines.
 ```
 Download the finefood, sst-2, imdb dataset from the link below :
 https://drive.google.com/file/d/1Ll0B1EL53AitPQBe8pPUHNopp-kIw8o4/view?usp=sharing
@@ -30,9 +32,35 @@ Unzip them inside the ./dataset folder
 
 ## Result reproduction
 
-### 1. Edit the shell file
-Edit the function below accordingly, for a single gpu instance, set local_default_num_jobs (number of GPUs on server = 1),
-and local_num_max_jobs (total number of jobs to run concurrently = 1).
+### 0. Activate virtual env
+This codes can run on our pre-defined virtual conda environment.
+You can manually activate environment by below command.
+```
+$ conda activate tetra
+```
+
+### 1. Edit the shell file(baselines.sh, result.sh)
+Our code is based on a single GPU.
+If you want to run this code on multiple GPU settings, edit the function below accordingly.
+
+#### 1) For multiple gpu instances
+#### Change GPU settings in shell script files.
+```
+GPUS=(0)
+NUM_GPUS=1
+```
+  to
+```
+GPUS=(0 1 2 ... (the number of GPUS you have - 1))
+NUM_GPUS=[the number of GPUS you have]
+
+ex) GPUS=(0 1 2 3 4 5 6 7)
+NUM_GPUS=8
+```
+
+#### Set local_default_num_jobs (number of GPUs on server), local_num_max_jobs (total number of jobs to run concurrently) on wait_n() function.
+Below is an example with 8 parallel gpus and wants to run with all gpus.
+
 ```
 wait_n() {
   #limit the max number of jobs as NUM_MAX_JOB and wait
@@ -71,13 +99,14 @@ Tests the trained source with different methods (LN_TENT, TeTra).
 - `SEED` : list of seeds that you will test upon
 
 Currently, the `results.sh` is implemented s.t. it only tests out distilbert on seed 0.
-Note that all of the results where derived from 8 * NVIDIA GeForce RTX 3090 GPUs.
-To run all of the conducted experiments, please run the `results_all.sh` file.
+#### Warning: This script will take several hours to finish.
 ```
 $ ./shell_script/results.sh 
 ```
+If you want to run all of the conducted experiments, please run the `results_all.sh` file.
+`results_all.sh` will take multiple of times to finish compare to 'results.sh'
 
-### 3. Evaluation
+### 4. Evaluation
 Reproduce the results
 
 **Modifiable shell variables**
