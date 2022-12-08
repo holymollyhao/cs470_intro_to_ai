@@ -72,6 +72,7 @@ Tests the trained source with different methods (LN_TENT, TeTra).
 
 Currently, the `results.sh` is implemented s.t. it only tests out distilbert on seed 0.
 Note that all of the results where derived from 8 * NVIDIA GeForce RTX 3090 GPUs.
+To run all of the conducted experiments, please run the `results_all.sh` file.
 ```
 $ ./shell_script/results.sh 
 ```
