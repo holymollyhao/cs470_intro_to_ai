@@ -212,7 +212,7 @@ def domain_data_loader(dataset, domains, file_path, batch_size, train_max_rows=n
                                                     concat=False)  # set validation batch_size = 32 to boost validation speed
         if is_src:
             test_data_loaders = datasets_to_dataloader(test_datasets, batch_size=batch_size, concat=False,
-                                                       drop_last=True, num_workers=32)
+                                                       drop_last=True, num_workers=16)
         else:
             test_data_loaders = datasets_to_dataloader(test_datasets, batch_size=batch_size, concat=False,
                                                        shuffle=False, num_workers=0)
@@ -233,11 +233,11 @@ def domain_data_loader(dataset, domains, file_path, batch_size, train_max_rows=n
         if is_src:
             train_data_loader = datasets_to_dataloader(train_datasets, batch_size=batch_size, concat=True,
                                                        drop_last=True,
-                                                       shuffle=True, num_workers=32)  # Drop_last for avoding one-sized minibatches for batchnorm layers
+                                                       shuffle=True, num_workers=16)  # Drop_last for avoding one-sized minibatches for batchnorm layers
         else:
             train_data_loader = datasets_to_dataloader(train_datasets, batch_size=batch_size, concat=True,
                                                        drop_last=False,
-                                                       shuffle=False, num_workers=32)
+                                                       shuffle=False, num_workers=16)
 
         valid_data_loader = datasets_to_dataloader(valid_datasets, batch_size=batch_size, concat=True,
                                                    shuffle=False)

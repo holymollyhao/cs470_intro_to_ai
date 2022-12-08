@@ -1,16 +1,27 @@
 LOG_PREFIX="submission_source" ## after normalization
 
 #INITIAL parameters for running model
-GPUS=(0 1 2 3 4 5 6 7)
-NUM_GPUS=${#GPUS[@]}
-SEED=0
+############# run in single GPU ##############
+GPUS=(0)
+NUM_GPUS=1
+##############################################
+
+
+# if you want to run command on multiple GPUS,
+# uncomment below line and replace upper code
+##############################################
+# GPUS=(0 1 2 4 5 6 7)
+# NUM_GPUS=${#GPUS[@]}
+##############################################
+
 i=0
+
 
 wait_n() {
   #limit the max number of jobs as NUM_MAX_JOB and wait
   background=($(jobs -p))
-  local default_num_jobs=8 #12
-  local num_max_jobs=8
+  local default_num_jobs=1 #12
+  local num_max_jobs=1
   echo $num_max_jobs
   if ((${#background[@]} >= num_max_jobs)); then
     wait -n
