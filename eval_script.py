@@ -62,7 +62,7 @@ def main(args):
         for d in ret:
             all_dict.update(d)
 
-    for model in ['distilbert']:
+    for model in ['distilbert', 'bert']:
         draw_single_instance(model, all_dict)
         print('\n')
 
@@ -127,8 +127,8 @@ def draw_single_instance(
                         all_dict= all_dict,
                         single=False
                     )
-                    avg = np.round(np.average([i[1] for i in multi_acc]), 2)
-                    std = np.round(np.std([i[1] for i in multi_acc]), 1)
+                    avg = np.round(np.average([i[1] for i in multi_acc if i[1]!=-1]), 2)
+                    std = np.round(np.std([i[1] for i in multi_acc if i[1]!=-1]), 1)
                     single_row.append(f'{avg} +- {std}')
 
         table.add_row(single_row)
