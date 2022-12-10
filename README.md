@@ -153,3 +153,10 @@ The expected result after running `results_all.sh` is as follows. Please note th
 +------------+-----------------+-----------------+-----------------+-----------------+
 ```
 
+### 5. Single-Evaluation
+To just run single instances, one just needs to run main.py with the according parameters.
+```
+$ python main.py --gpu_idx 0 --dataset sst-2 --method Src --src train --tgt test --epoch 1 --lr 0.00001 --model bert --seed 0 --log_prefix submission_source_0_epoch1_lr0.00001_modelbert
+$ python main.py --gpu_idx 0 --dataset finefood --method ttaprompttune --src train --tgt test --epoch 1 --update_every_x 32 --memory_size 32 --model bert --seed 0 --n_tokens 10 --adapt_type embed --online --lr 0.001 --log_prefix submission_results_0_model_bert_lr0.001_memsize32_uex32_from_finefood_to_sst-2 --load_checkpoint_path log/sst-2/Src/src_train/tgt_test/submission_source_0_epoch1_lr0.00001_modelbert/cp/cp_last.pth.tar
+```
+By running the two, we can generate source trained on the sst-2 dataset, and adapted on the finefood dataset with TeTra.
